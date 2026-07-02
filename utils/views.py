@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -179,24 +180,13 @@ class CloseTicketModal(discord.ui.Modal):
             embed=base_embed(
                 settings,
                 "Ticket Closed",
-                "Ticket ini sudah ditutup. Channel dikunci agar riwayat percakapan tetap tersimpan.",
+                "Ticket ini sudah ditutup. Channel akan dihapus otomatis.",
             ).add_field(name="Closed By", value=interaction.user.mention, inline=True)
             .add_field(name="Reason", value=reason, inline=False),
         )
 
-        opener = interaction.guild.get_member(self.opener_id)
-        if opener:
-            await interaction.channel.set_permissions(
-                opener,
-                send_messages=False,
-                view_channel=True,
-                read_message_history=True,
-                reason=f"Ticket closed by {interaction.user}",
-            )
-        await interaction.channel.edit(
-            name=f"closed-{interaction.channel.name[:80]}",
-            reason=f"Ticket closed by {interaction.user}",
-        )
+        await asyncio.sleep(5)
+        await interaction.channel.delete(reason=f"Ticket closed by {interaction.user}: {reason[:120]}")
 
 
 class CloseTicketView(discord.ui.View):

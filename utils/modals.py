@@ -7,7 +7,7 @@ from typing import Any
 import discord
 
 from utils.checkout import CheckoutView
-from utils.embeds import invoice_embed, money
+from utils.embeds import compact_datetime, invoice_embed, money
 from utils.files import configured_files
 from utils.pakasir import PakasirConfigError, PakasirGateway
 from utils.qris import make_qris_file
@@ -107,20 +107,19 @@ class BuyModal(discord.ui.Modal):
 
         embed = invoice_embed(settings, order, self.product)
         if payment_url:
-            embed.add_field(name="Payment Gateway", value="Pakasir Checkout", inline=False)
             if qris_text:
-                embed.add_field(name="QRIS", value="Scan QRIS yang terlampir pada invoice ini.", inline=False)
                 embed.set_image(url=f"attachment://qris-{order['invoice']}.png")
+            payment_lines = ["Pakasir QRIS"]
             if pakasir_total:
-                embed.add_field(name="Pakasir Total", value=money(int(pakasir_total), settings), inline=True)
+                payment_lines.append(f"Total bayar: **{money(int(pakasir_total), settings)}**")
             if pakasir_expired:
-                embed.add_field(name="Expired At", value=str(pakasir_expired), inline=True)
-            if checkout_note:
-                embed.add_field(name="Payment Instruction", value=checkout_note, inline=False)
+                payment_lines.append(f"Expired: **{compact_datetime(str(pakasir_expired))}**")
+            payment_lines.append("Scan QRIS atau gunakan tombol Pay Now.")
+            embed.add_field(name="Payment", value="\n".join(payment_lines), inline=False)
         else:
             embed.add_field(
-                name="Payment Instruction",
-                value="Payment gateway belum aktif. Silakan hubungi staff untuk instruksi pembayaran.",
+                name="Payment",
+                value="Hubungi staff untuk instruksi pembayaran.",
                 inline=False,
             )
         base_dir = Path(__file__).resolve().parent.parent
@@ -176,8 +175,8 @@ class BuyModal(discord.ui.Modal):
         embed.add_field(name="Invoice ID", value=order["invoice"], inline=True)
         embed.add_field(name="Product", value=self.product["name"], inline=True)
         embed.add_field(name="Quantity", value=str(order["quantity"]), inline=True)
-        embed.add_field(name="Unit Price", value=money(int(self.product["price"]), settings), inline=True)
-        embed.add_field(name="Grand Total", value=f"**{money(total, settings)}**", inline=True)
+        embed.add_field(name="Harga", value=money(int(self.product["price"]), settings), inline=True)
+        embed.add_field(name="Total", value=f"**{money(total, settings)}**", inline=True)
         embed.add_field(name="Status", value=order["status"], inline=True)
         embed.add_field(name="Created At", value=order["date"], inline=False)
         if order.get("payment_url"):

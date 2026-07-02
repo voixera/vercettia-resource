@@ -21,6 +21,17 @@ def stock_text(stock: int) -> str:
     return "Unlimited" if stock == -1 else str(stock)
 
 
+def compact_datetime(value: str) -> str:
+    if not value:
+        return "-"
+    cleaned = value.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(cleaned)
+    except ValueError:
+        return value.split(".")[0].replace("T", " ")
+    return parsed.strftime("%d %b %Y, %H:%M")
+
+
 def status_badge(status: str) -> str:
     normalized = status.strip().lower()
     if normalized == "ready":
@@ -101,15 +112,13 @@ def invoice_embed(
     product: dict[str, Any],
 ) -> discord.Embed:
     embed = base_embed(settings, f"Invoice {order['invoice']}")
-    embed.description = (
-        "Order berhasil dibuat. Selesaikan pembayaran melalui checkout resmi, "
-        "lalu gunakan **Check Payment** untuk verifikasi."
-    )
     embed.add_field(name="Product", value=f"**{display_product_name(product)}**", inline=False)
-    embed.add_field(name="Plan", value=product["duration"], inline=True)
-    embed.add_field(name="Access", value=product["type"], inline=True)
-    embed.add_field(name="Quantity", value=str(order["quantity"]), inline=True)
+    embed.add_field(
+        name="Details",
+        value=f"{product['duration']} | {product['type']} | Qty {order['quantity']}",
+        inline=False,
+    )
     embed.add_field(name="Harga", value=money(int(product["price"]), settings), inline=True)
-    embed.add_field(name="Grand Total", value=f"**{money(int(order['total']), settings)}**", inline=True)
+    embed.add_field(name="Total", value=f"**{money(int(order['total']), settings)}**", inline=True)
     embed.add_field(name="Status", value=f"**{order['status']}**", inline=True)
     return embed

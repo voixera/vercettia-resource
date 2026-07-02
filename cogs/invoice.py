@@ -23,16 +23,15 @@ class Invoice(commands.Cog):
         embed = base_embed(
             settings,
             f"Invoice {order['invoice']}",
-            "Detail transaksi tersimpan. Gunakan tombol di bawah untuk membuka checkout atau cek status pembayaran.",
+            None,
         )
         embed.add_field(name="Product", value=f"**{order['product']}**", inline=False)
         embed.add_field(name="Quantity", value=str(order["quantity"]), inline=True)
-        embed.add_field(name="Grand Total", value=f"**{money(int(order['total']), settings)}**", inline=True)
+        embed.add_field(name="Total", value=f"**{money(int(order['total']), settings)}**", inline=True)
         embed.add_field(name="Status", value=f"**{order['status']}**", inline=True)
-        embed.add_field(name="Created At", value=order["date"], inline=False)
         payment_url = order["payment_url"] if "payment_url" in order.keys() else ""
         if payment_url:
-            embed.add_field(name="Checkout", value="Pakasir payment link is attached below.", inline=False)
+            embed.add_field(name="Payment", value="Pakasir QRIS", inline=False)
         await interaction.response.send_message(
             embed=embed,
             view=CheckoutView(order["invoice"], int(order["total"]), payment_url or None),
