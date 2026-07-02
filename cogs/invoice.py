@@ -31,7 +31,7 @@ class Invoice(commands.Cog):
         embed.add_field(name="Status", value=f"**{order['status']}**", inline=True)
         payment_url = order["payment_url"] if "payment_url" in order.keys() else ""
         if payment_url:
-            embed.add_field(name="Payment", value="Pakasir QRIS", inline=False)
+            embed.add_field(name="Payment", value="QRIS", inline=False)
         await interaction.response.send_message(
             embed=embed,
             view=CheckoutView(order["invoice"], int(order["total"]), payment_url or None),
