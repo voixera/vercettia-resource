@@ -169,8 +169,8 @@
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 20000,
-      "stock": 19,
-      "status": "Ready",
+      "stock": 0,
+      "status": "Kosong",
       "description": "Family Plan",
       "category": "music_streaming"
     },

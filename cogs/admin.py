@@ -191,6 +191,12 @@ class Admin(commands.Cog):
             await interaction.followup.send("Produk tidak ditemukan.", ephemeral=True)
             return
         product[key] = value
+        if key == "stock" and int(value) == 0:
+            product["status"] = "Kosong"
+            await self.bot.db.update_product_field(name, "status", "Kosong")
+        elif key == "stock" and int(value) > 0 and str(product.get("status", "")).lower() == "kosong":
+            product["status"] = "Ready"
+            await self.bot.db.update_product_field(name, "status", "Ready")
         await self.bot.save_products_config()
         await interaction.followup.send(f"{label} **{name}** berhasil diperbarui.", ephemeral=True)
 

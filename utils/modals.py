@@ -50,6 +50,12 @@ class BuyModal(discord.ui.Modal):
 
         stock = int(self.product["stock"])
         status = str(self.product["status"]).lower()
+        if stock == 0:
+            await interaction.followup.send(
+                settings.get("messages", {}).get("out_of_stock", "Stok tidak mencukupi."),
+                ephemeral=True,
+            )
+            return
         if status != "ready":
             await interaction.followup.send(
                 settings.get("messages", {}).get("maintenance", "Produk belum ready."),
@@ -101,8 +107,12 @@ class BuyModal(discord.ui.Modal):
                 payment_url = None
 
         if stock != -1:
-            await bot.db.update_product_field(self.product["name"], "stock", stock - quantity)
-            self.product["stock"] = stock - quantity
+            new_stock = stock - quantity
+            await bot.db.update_product_field(self.product["name"], "stock", new_stock)
+            self.product["stock"] = new_stock
+            if new_stock == 0:
+                await bot.db.update_product_field(self.product["name"], "status", "Kosong")
+                self.product["status"] = "Kosong"
             await bot.save_products_config()
 
         embed = invoice_embed(settings, order, self.product)

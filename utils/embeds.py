@@ -36,11 +36,20 @@ def status_badge(status: str) -> str:
     normalized = status.strip().lower()
     if normalized == "ready":
         return "Ready"
+    if normalized in {"kosong", "empty"}:
+        return "Kosong"
     if normalized == "maintenance":
         return "Maintenance"
     if normalized in {"out of stock", "sold out"}:
-        return "Sold Out"
+        return "Kosong"
     return status
+
+
+def product_status(product: dict[str, Any]) -> str:
+    stock = int(product.get("stock", 0))
+    if stock == 0:
+        return "Kosong"
+    return status_badge(str(product.get("status", "Ready")))
 
 
 def display_product_name(product: dict[str, Any]) -> str:
@@ -82,7 +91,7 @@ def category_embed(
     for product in products:
         detail_lines = [
             f"**Harga:** {money(int(product['price']), settings)}",
-            f"{product['type']} | {status_badge(product['status'])} | Stok {stock_text(int(product['stock']))}",
+            f"{product['type']} | {product_status(product)} | Stok {stock_text(int(product['stock']))}",
         ]
         embed.add_field(
             name=display_product_name(product),
@@ -101,7 +110,7 @@ def product_embed(settings: dict[str, Any], product: dict[str, Any]) -> discord.
     embed.add_field(name="Plan", value=f"**{product['duration']}**", inline=True)
     embed.add_field(name="Access", value=f"**{product['type']}**", inline=True)
     embed.add_field(name="Harga", value=f"**{money(int(product['price']), settings)}**", inline=True)
-    embed.add_field(name="Status", value=f"**{status_badge(product['status'])}**", inline=True)
+    embed.add_field(name="Status", value=f"**{product_status(product)}**", inline=True)
     embed.add_field(name="Stock", value=f"**{stock_text(int(product['stock']))}**", inline=True)
     return embed
 
