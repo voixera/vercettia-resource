@@ -1,0 +1,188 @@
+{
+  "categories": {
+    "streaming": {
+      "name": "Streaming",
+      "description": "Layanan hiburan dan tontonan premium."
+    },
+    "editing": {
+      "name": "Editing Apps",
+      "description": "Aplikasi desain, video, dan produktivitas kreatif."
+    },
+    "music_streaming": {
+      "name": "Music Streaming",
+      "description": "Aplikasi musik dan video streaming berbasis langganan."
+    }
+  },
+  "products": [
+    {
+      "name": "Alight Motion Private",
+      "duration": "1 Tahun",
+      "type": "Private",
+      "price": 49000,
+      "stock": -1,
+      "status": "Ready",
+      "description": "Akun premium private Alight Motion untuk akses tahunan.",
+      "category": "editing"
+    },
+    {
+      "name": "Canva Member",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 15000,
+      "stock": -1,
+      "status": "Ready",
+      "description": "Invite member Canva Pro untuk kebutuhan desain harian.",
+      "category": "editing"
+    },
+    {
+      "name": "Canva Head",
+      "duration": "1 Bulan",
+      "type": "Private",
+      "price": 25000,
+      "stock": 10,
+      "status": "Ready",
+      "description": "Akun Canva Head untuk pengelolaan akses Canva.",
+      "category": "editing"
+    },
+    {
+      "name": "LokLok Basic Shar",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 25000,
+      "stock": 25,
+      "status": "Ready",
+      "description": "Paket LokLok Basic shared untuk streaming harian.",
+      "category": "streaming"
+    },
+    {
+      "name": "LokLok Standar Shar",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 35000,
+      "stock": 20,
+      "status": "Ready",
+      "description": "Paket LokLok Standar shared dengan akses premium.",
+      "category": "streaming"
+    },
+    {
+      "name": "IQIYI Premium Shar",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 18000,
+      "stock": 15,
+      "status": "Ready",
+      "description": "Akses IQIYI Premium shared selama satu bulan.",
+      "category": "streaming"
+    },
+    {
+      "name": "IQIYI Standard Shar",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 12000,
+      "stock": 15,
+      "status": "Ready",
+      "description": "Akses IQIYI Standard shared selama satu bulan.",
+      "category": "streaming"
+    },
+    {
+      "name": "Prime Video Shar",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 15000,
+      "stock": 9,
+      "status": "Ready",
+      "description": "Akses Prime Video shared selama satu bulan.",
+      "category": "streaming"
+    },
+    {
+      "name": "WeTV 6U",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 18000,
+      "stock": 10,
+      "status": "Ready",
+      "description": "Akses WeTV 6U shared selama satu bulan.",
+      "category": "streaming"
+    },
+    {
+      "name": "PicsArt Shar",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 10000,
+      "stock": -1,
+      "status": "Ready",
+      "description": "Akses PicsArt shared selama satu bulan.",
+      "category": "editing"
+    },
+    {
+      "name": "Youku Shar",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 10000,
+      "stock": 10,
+      "status": "Ready",
+      "description": "Akses Youku shared selama satu bulan.",
+      "category": "streaming"
+    },
+    {
+      "name": "VIU Private",
+      "duration": "1 Tahun",
+      "type": "Private",
+      "price": 10000,
+      "stock": 8,
+      "status": "Ready",
+      "description": "Akun VIU private.",
+      "category": "streaming"
+    },
+    {
+      "name": "Netflix",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 30000,
+      "stock": 5,
+      "status": "Ready",
+      "description": "Private 1 Bulan",
+      "category": "streaming"
+    },
+    {
+      "name": "Disney+",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 25000,
+      "stock": 7,
+      "status": "Ready",
+      "description": "Akses Disney+ Hotstar.",
+      "category": "streaming"
+    },
+    {
+      "name": "Spotify Premium",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 25000,
+      "stock": 20,
+      "status": "Ready",
+      "description": "Akses Spotify Premium.",
+      "category": "music_streaming"
+    },
+    {
+      "name": "YouTube Premium",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 20000,
+      "stock": 19,
+      "status": "Ready",
+      "description": "Family Plan",
+      "category": "music_streaming"
+    },
+    {
+      "name": "CapCut Pro",
+      "duration": "1 Bulan",
+      "type": "Shared",
+      "price": 20000,
+      "stock": -1,
+      "status": "Ready",
+      "description": "Akses CapCut Pro.",
+      "category": "editing"
+    }
+  ]
+}

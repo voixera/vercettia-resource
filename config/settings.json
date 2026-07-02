@@ -1,0 +1,26 @@
+{
+  "store_name": "Vercettia Store",
+  "activity": "Made with ❤️ by Vercettia Dev",
+  "embed_color": "#8B5CF6",
+  "footer": "Vercettia Store • Premium Account Marketplace",
+  "logo": "assets/logo.png",
+  "banner": "assets/banner.png",
+  "support_server": "https://discord.gg/your-server",
+  "admin_role_id": 0,
+  "admin_user_ids": [
+    975269168184168539,
+    1120002718090674197
+  ],
+  "staff_role_id": 0,
+  "ticket_category_id": 0,
+  "order_log_channel_id": 0,
+  "currency": "Rp",
+  "invoice_prefix": "Vercettia",
+  "products_per_page": 5,
+  "messages": {
+    "generic_error": "Terjadi kesalahan. Silakan coba lagi nanti.",
+    "admin_only": "Command ini hanya dapat digunakan oleh Admin.",
+    "maintenance": "Produk sedang maintenance.",
+    "out_of_stock": "Stok produk sedang kosong."
+  }
+}

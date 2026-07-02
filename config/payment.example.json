@@ -1,0 +1,57 @@
+{
+  "payment_gateway": {
+    "enabled": true,
+    "provider": "pakasir",
+    "base_url": "https://app.pakasir.com",
+    "project_slug": "isi-slug-project-pakasir",
+    "api_key": "isi-api-key-pakasir",
+    "qris_only": true,
+    "redirect_url": "",
+    "default_method": "qris",
+    "checkout_note": "Klik Pay Now untuk menyelesaikan pembayaran melalui Pakasir. Setelah membayar, gunakan Check Payment atau tunggu staff memverifikasi invoice."
+  },
+  "methods": [
+    {
+      "name": "QRIS",
+      "emoji": "🏦",
+      "account_name": "Vercettia Store",
+      "account_number": "Upload gambar QRIS di invoice atau ticket.",
+      "enabled": true
+    },
+    {
+      "name": "Dana",
+      "emoji": "💳",
+      "account_name": "Vercettia Store",
+      "account_number": "08xxxxxxxxxx",
+      "enabled": true
+    },
+    {
+      "name": "OVO",
+      "emoji": "💳",
+      "account_name": "Vercettia Store",
+      "account_number": "08xxxxxxxxxx",
+      "enabled": true
+    },
+    {
+      "name": "GoPay",
+      "emoji": "💳",
+      "account_name": "Vercettia Store",
+      "account_number": "08xxxxxxxxxx",
+      "enabled": true
+    },
+    {
+      "name": "ShopeePay",
+      "emoji": "🛍️",
+      "account_name": "Vercettia Store",
+      "account_number": "08xxxxxxxxxx",
+      "enabled": true
+    },
+    {
+      "name": "Bank Transfer",
+      "emoji": "🏧",
+      "account_name": "Vercettia Store",
+      "account_number": "BCA 0000000000",
+      "enabled": true
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+.env
+config/payment.json
+database/database.db
+database/backups/
+logs/
+__pycache__/
+*.py[cod]
+*.log
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
