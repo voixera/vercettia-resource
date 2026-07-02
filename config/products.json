@@ -35,7 +35,7 @@
       "category": "editing"
     },
     {
-      "name": "Canva Head",
+      "name": "Canva Head Priv",
       "duration": "1 Bulan",
       "type": "Private",
       "price": 25000,
@@ -45,7 +45,7 @@
       "category": "editing"
     },
     {
-      "name": "LokLok Basic Shar",
+      "name": "LokLok Basic Sharing",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 25000,
@@ -55,7 +55,7 @@
       "category": "streaming"
     },
     {
-      "name": "LokLok Standar Shar",
+      "name": "LokLok Standar Sharing",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 35000,
@@ -65,7 +65,7 @@
       "category": "streaming"
     },
     {
-      "name": "IQIYI Premium Shar",
+      "name": "IQIYI Premium Sharing",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 18000,
@@ -75,7 +75,7 @@
       "category": "streaming"
     },
     {
-      "name": "IQIYI Standard Shar",
+      "name": "IQIYI Standard Sharing",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 12000,
@@ -85,7 +85,7 @@
       "category": "streaming"
     },
     {
-      "name": "Prime Video Shar",
+      "name": "Prime Video Sharing",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 15000,
@@ -105,7 +105,7 @@
       "category": "streaming"
     },
     {
-      "name": "PicsArt Shar",
+      "name": "PicsArt Sharing",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 10000,
@@ -115,7 +115,7 @@
       "category": "editing"
     },
     {
-      "name": "Youku Shar",
+      "name": "Youku Sharing",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 10000,
@@ -135,11 +135,11 @@
       "category": "streaming"
     },
     {
-      "name": "Netflix",
+      "name": "Netflix 1User1Profil",
       "duration": "1 Bulan",
-      "type": "Shared",
-      "price": 30000,
-      "stock": 5,
+      "type": "Private",
+      "price": 35000,
+      "stock": 1,
       "status": "Ready",
       "description": "Private 1 Bulan",
       "category": "streaming"
@@ -155,9 +155,9 @@
       "category": "streaming"
     },
     {
-      "name": "Spotify Premium",
+      "name": "Spotify Premium Priv",
       "duration": "1 Bulan",
-      "type": "Shared",
+      "type": "Private",
       "price": 25000,
       "stock": 20,
       "status": "Ready",
@@ -165,7 +165,7 @@
       "category": "music_streaming"
     },
     {
-      "name": "YouTube Premium",
+      "name": "YouTube Premium Famplan",
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 20000,

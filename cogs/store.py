@@ -77,12 +77,7 @@ class Store(commands.Cog):
         embed = base_embed(
             settings,
             "Vercettia Offers",
-            "Limited deals, curated upgrades, and fresh premium slots from Vercettia Store.",
-        )
-        embed.add_field(
-            name="How to Claim",
-            value="Buka `/product`, pilih aplikasi yang tersedia, lalu checkout melalui invoice resmi.",
-            inline=False,
+            None,
         )
         await interaction.followup.send(
             embed=embed,

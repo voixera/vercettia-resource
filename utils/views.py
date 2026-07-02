@@ -34,7 +34,7 @@ class ProductSelect(discord.ui.Select):
         ]
         if not options:
             options = [discord.SelectOption(label="Belum ada produk", value="empty")]
-        super().__init__(placeholder="Pilih produk untuk checkout", min_values=1, max_values=1, options=options)
+        super().__init__(placeholder="Pilih produk", min_values=1, max_values=1, options=options)
         self.products = {product["name"]: product for product in products}
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -73,7 +73,7 @@ class StoreView(discord.ui.View):
         embed = base_embed(
             self.settings,
             "Vercettia Store",
-            "Pilih produk melalui menu di bawah. Katalog dibagi per kategori agar lebih mudah dibaca.",
+            None,
         )
         embeds = [embed]
 
@@ -222,4 +222,3 @@ class CloseTicketView(discord.ui.View):
             return
 
         await interaction.response.send_modal(CloseTicketModal(self.opener_id))
-

@@ -53,7 +53,7 @@ def base_embed(
         timestamp=datetime.now(UTC),
     )
     if settings.get("footer"):
-        embed.set_footer(text=f"{settings['footer']} | Secure checkout")
+        embed.set_footer(text=settings["footer"])
     if include_assets and settings.get("logo") and (Path(__file__).resolve().parent.parent / settings["logo"]).exists():
         embed.set_thumbnail(url=f"attachment://{settings['logo'].split('/')[-1]}")
     if include_assets and settings.get("banner") and (Path(__file__).resolve().parent.parent / settings["banner"]).exists():
@@ -67,15 +67,15 @@ def category_embed(
     description: str,
     products: list[dict[str, Any]],
 ) -> discord.Embed:
-    embed = base_embed(settings, name, description, include_assets=False)
+    embed = base_embed(settings, name, None, include_assets=False)
     for product in products:
+        detail_lines = [
+            f"**Harga:** {money(int(product['price']), settings)}",
+            f"{product['type']} | {status_badge(product['status'])} | Stok {stock_text(int(product['stock']))}",
+        ]
         embed.add_field(
             name=display_product_name(product),
-            value=(
-                f"**Harga:** {money(int(product['price']), settings)}\n"
-                f"**Akses:** {product['type']} | **Status:** {status_badge(product['status'])} | "
-                f"**Stok:** {stock_text(int(product['stock']))}"
-            ),
+            value="\n".join(detail_lines),
             inline=False,
         )
     return embed
@@ -85,18 +85,13 @@ def product_embed(settings: dict[str, Any], product: dict[str, Any]) -> discord.
     embed = base_embed(
         settings,
         display_product_name(product),
-        product.get("description") or "Premium account ready for instant checkout.",
+        None,
     )
     embed.add_field(name="Plan", value=f"**{product['duration']}**", inline=True)
     embed.add_field(name="Access", value=f"**{product['type']}**", inline=True)
     embed.add_field(name="Harga", value=f"**{money(int(product['price']), settings)}**", inline=True)
     embed.add_field(name="Status", value=f"**{status_badge(product['status'])}**", inline=True)
     embed.add_field(name="Stock", value=f"**{stock_text(int(product['stock']))}**", inline=True)
-    embed.add_field(
-        name="Checkout",
-        value="Klik **Buy Now** untuk membuat invoice dan menerima payment link otomatis.",
-        inline=False,
-    )
     return embed
 
 
