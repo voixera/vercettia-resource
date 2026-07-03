@@ -1,6 +1,15 @@
 # Vercettia Store Discord Bot
 
-Discord marketplace bot untuk katalog produk, checkout Pakasir QRIS, invoice ticket, support ticket, voucher, dan proses delivery manual oleh admin.
+Vercettia Store adalah premium digital marketplace yang sedang dikembangkan menjadi ekosistem bot Discord dan web Laravel.
+
+Saat ini bot Discord tetap menjadi runtime utama yang stabil. Folder `web/` berisi fondasi Laravel 12 untuk API dan website premium, sedangkan `docs/` berisi arsitektur serta roadmap migrasi.
+
+## Struktur
+
+- `bot.py`, `cogs/`, `utils/`, `config/`: Discord bot produksi saat ini.
+- `web/`: Laravel 12 API dan Blade/Vite frontend starter.
+- `docs/`: arsitektur, roadmap, dan catatan sistem.
+- `database/`: SQLite bot saat ini dan area transisi database.
 
 ## Setup
 
@@ -110,3 +119,9 @@ File sensitif tetap di-ignore:
 - `config/payment.json`
 - `database/database.db`
 - `logs/`
+
+## Web Laravel
+
+Lihat [web/README.md](web/README.md) untuk setup Laravel, API, Vite, dan arah migrasi bot ke API.
+
+Dokumentasi arsitektur tersedia di [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
