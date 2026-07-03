@@ -1,0 +1,52 @@
+{
+  "enabled": false,
+  "provider": "telegram_bot",
+  "bot_username": "MeowtensOrder_bot",
+  "api_id": 0,
+  "api_hash": "isi_api_hash_telegram",
+  "session_name": "meowtens_supplier",
+  "stock_command": "/stock",
+  "response_wait_seconds": 8,
+  "product_map": [
+    {
+      "local_name": "ALIGHT MOTION PRIVATE 1 TAHUN",
+      "supplier_name": "ALIGHT MOTION PRIVATE 1 TAHUN"
+    },
+    {
+      "local_name": "CANVA MEMBER 1 BULAN",
+      "supplier_name": "CANVA MEMBER 1 BULAN"
+    },
+    {
+      "local_name": "HBO MAX STANDARD SHAR",
+      "supplier_name": "HBO MAX STANDARD SHAR"
+    },
+    {
+      "local_name": "IQIYI STD SHAR 1 BULAN",
+      "supplier_name": "IQIYI STD SHAR 1 BULAN"
+    },
+    {
+      "local_name": "LOKLOK STANDAR SHAR 1B",
+      "supplier_name": "LOKLOK STANDAR SHAR 1B"
+    },
+    {
+      "local_name": "PICSART SHAR 1 BULAN",
+      "supplier_name": "PICSART SHAR 1 BULAN"
+    },
+    {
+      "local_name": "PRIME VIDEO SHAR 1 BULAN",
+      "supplier_name": "PRIME VIDEO SHAR 1 BULAN"
+    },
+    {
+      "local_name": "VIU PRIVATE ANLIM 1 TAHUN",
+      "supplier_name": "VIU PRIVATE ANLIM 1 TAHUN"
+    },
+    {
+      "local_name": "WETV 6U SHAR 1 BULAN",
+      "supplier_name": "WETV 6U SHAR 1 BULAN"
+    },
+    {
+      "local_name": "YOUKU SHAR 1 BULAN",
+      "supplier_name": "YOUKU SHAR 1 BULAN"
+    }
+  ]
+}

@@ -34,8 +34,10 @@ class VercettiaBot(commands.Bot):
         intents = discord.Intents.default()
         intents.guilds = True
         super().__init__(command_prefix=commands.when_mentioned, intents=intents)
+        self.base_dir = BASE_DIR
         self.configs: dict[str, Any] = {}
-        self.db = Database(BASE_DIR / "database" / "database.db")
+        database_path = Path(os.getenv("DATABASE_PATH", str(BASE_DIR / "database" / "database.db")))
+        self.db = Database(database_path)
         self._fulfillment_running = False
 
     async def setup_hook(self) -> None:
@@ -95,8 +97,13 @@ class VercettiaBot(commands.Bot):
         self.configs = {
             "settings": self._load_json(CONFIG_DIR / "settings.json"),
             "products": self._load_json(CONFIG_DIR / "products.json"),
-            "payment": self._load_json(CONFIG_DIR / "payment.json"),
+            "payment": self._payment_config_from_env(
+                self._load_json(CONFIG_DIR / "payment.json", required=False)
+            ),
             "delivery": self._load_json(CONFIG_DIR / "delivery.json"),
+            "supplier": self._supplier_config_from_env(
+                self._load_json(CONFIG_DIR / "supplier.json", required=False)
+            ),
         }
 
     async def sync_products_to_database(self) -> None:
@@ -108,6 +115,9 @@ class VercettiaBot(commands.Bot):
     async def save_products_config(self) -> None:
         self._write_json(CONFIG_DIR / "products.json", self.products_config)
         await self.sync_products_to_database()
+
+    async def save_supplier_config(self) -> None:
+        self._write_json(CONFIG_DIR / "supplier.json", self.supplier_config)
 
     @property
     def settings(self) -> dict[str, Any]:
@@ -125,6 +135,10 @@ class VercettiaBot(commands.Bot):
     def delivery_config(self) -> dict[str, Any]:
         return self.configs.get("delivery", {})
 
+    @property
+    def supplier_config(self) -> dict[str, Any]:
+        return self.configs.get("supplier", {})
+
     @tasks.loop(seconds=45)
     async def fulfillment_worker(self) -> None:
         if self._fulfillment_running or not self.delivery_config.get("enabled", True):
@@ -136,13 +150,6 @@ class VercettiaBot(commands.Bot):
 
         self._fulfillment_running = True
         try:
-            paid_orders = await self.db.list_paid_undelivered_orders(limit=25)
-            for order in paid_orders:
-                try:
-                    await self.deliver_order(order)
-                except Exception:
-                    logging.exception("Failed to deliver paid order %s.", order["invoice"])
-
             orders = await self.db.list_orders_by_status("Waiting Payment", limit=25)
             for order in orders:
                 try:
@@ -159,9 +166,10 @@ class VercettiaBot(commands.Bot):
                         str(transaction.get("completed_at", "")),
                         str(transaction.get("payment_method", order["payment_method"] or "qris")),
                     )
-                    updated_order = await self.db.get_order(order["invoice"])
-                    if updated_order:
-                        await self.deliver_order(updated_order)
+                    logging.info(
+                        "Payment confirmed for %s. Manual delivery will be handled in the ticket.",
+                        order["invoice"],
+                    )
                 except Exception:
                     logging.exception("Failed to process fulfillment for %s.", order["invoice"])
         except Exception:
@@ -173,35 +181,69 @@ class VercettiaBot(commands.Bot):
     async def before_fulfillment_worker(self) -> None:
         await self.wait_until_ready()
 
-    async def deliver_order(self, order: Any) -> None:
-        if order["delivered_at"]:
-            return
-
-        product_name = order["product"]
-        delivery_products = self.delivery_config.get("products", {})
-        default_message = self.delivery_config.get(
-            "default_message",
-            "Pembayaran sudah diterima. Produk sedang diproses oleh tim Vercettia Store.",
-        )
-        product_message = str(delivery_products.get(product_name, default_message))
-        user = self.get_user(int(order["user_id"])) or await self.fetch_user(int(order["user_id"]))
-
-        embed = discord.Embed(
-            title=f"Order Done {order['invoice']}",
-            description="Pembayaran sudah terkonfirmasi. Detail produk tersedia di bawah ini.",
-            color=discord.Color(int(str(self.settings.get("embed_color", "#8B5CF6")).lstrip("#"), 16)),
-            timestamp=discord.utils.utcnow(),
-        )
-        embed.add_field(name="Product", value=product_name, inline=False)
-        embed.add_field(name="Delivery", value=product_message[:1024], inline=False)
-        embed.set_footer(text=self.settings.get("footer", "Vercettia Store"))
-        await user.send(embed=embed)
-        await self.db.mark_order_done(order["invoice"])
-
     @staticmethod
-    def _load_json(path: Path) -> dict[str, Any]:
+    def _load_json(path: Path, *, required: bool = True) -> dict[str, Any]:
+        if not path.exists():
+            if required:
+                raise FileNotFoundError(path)
+            return {}
         with path.open("r", encoding="utf-8") as file:
             return json.load(file)
+
+    @staticmethod
+    def _env_bool(name: str, default: bool = False) -> bool:
+        value = os.getenv(name)
+        if value is None:
+            return default
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    @classmethod
+    def _payment_config_from_env(cls, config: dict[str, Any]) -> dict[str, Any]:
+        gateway = dict(config.get("payment_gateway", {}))
+        if os.getenv("PAKASIR_PROJECT_SLUG") or os.getenv("PAKASIR_API_KEY"):
+            gateway.update(
+                {
+                    "enabled": cls._env_bool("PAKASIR_ENABLED", True),
+                    "provider": "pakasir",
+                    "base_url": os.getenv("PAKASIR_BASE_URL", gateway.get("base_url", "https://app.pakasir.com")),
+                    "project_slug": os.getenv("PAKASIR_PROJECT_SLUG", gateway.get("project_slug", "")),
+                    "api_key": os.getenv("PAKASIR_API_KEY", gateway.get("api_key", "")),
+                    "qris_only": cls._env_bool("PAKASIR_QRIS_ONLY", bool(gateway.get("qris_only", True))),
+                    "redirect_url": os.getenv("PAKASIR_REDIRECT_URL", gateway.get("redirect_url", "")),
+                    "default_method": os.getenv("PAKASIR_DEFAULT_METHOD", gateway.get("default_method", "qris")),
+                    "checkout_note": os.getenv(
+                        "PAKASIR_CHECKOUT_NOTE",
+                        gateway.get(
+                            "checkout_note",
+                            "Admin akan mengirim data akun premium di ticket setelah pembayaran terkonfirmasi.",
+                        ),
+                    ),
+                }
+            )
+        config["payment_gateway"] = gateway
+        config.setdefault("methods", [])
+        return config
+
+    @classmethod
+    def _supplier_config_from_env(cls, config: dict[str, Any]) -> dict[str, Any]:
+        if os.getenv("TELEGRAM_API_ID") or os.getenv("TELEGRAM_SESSION_STRING"):
+            config.update(
+                {
+                    "enabled": cls._env_bool("SUPPLIER_ENABLED", True),
+                    "provider": "telegram_bot",
+                    "bot_username": os.getenv("SUPPLIER_BOT_USERNAME", config.get("bot_username", "MeowtensOrder_bot")),
+                    "api_id": int(os.getenv("TELEGRAM_API_ID", str(config.get("api_id", 0) or 0))),
+                    "api_hash": os.getenv("TELEGRAM_API_HASH", config.get("api_hash", "")),
+                    "session_name": os.getenv("TELEGRAM_SESSION_NAME", config.get("session_name", "meowtens_supplier")),
+                    "session_string": os.getenv("TELEGRAM_SESSION_STRING", config.get("session_string", "")),
+                    "stock_command": os.getenv("SUPPLIER_STOCK_COMMAND", config.get("stock_command", "/stock")),
+                    "response_wait_seconds": int(
+                        os.getenv("SUPPLIER_RESPONSE_WAIT_SECONDS", str(config.get("response_wait_seconds", 8)))
+                    ),
+                }
+            )
+        config.setdefault("product_map", [])
+        return config
 
     @staticmethod
     def _write_json(path: Path, data: dict[str, Any]) -> None:
@@ -211,7 +253,8 @@ class VercettiaBot(commands.Bot):
 
 
 async def main() -> None:
-    load_dotenv()
+    load_dotenv(BASE_DIR / ".env")
+    load_dotenv(BASE_DIR.parent / ".env")
     setup_logging(BASE_DIR / "logs")
     token = os.getenv("DISCORD_TOKEN")
     if not token or token == "put_your_bot_token_here":

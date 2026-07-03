@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.checkout import CheckoutView
-from utils.embeds import base_embed, money
+from utils.messages import order_lookup_message
 
 
 class Invoice(commands.Cog):
@@ -19,22 +19,10 @@ class Invoice(commands.Cog):
             await interaction.response.send_message("Invoice tidak ditemukan.", ephemeral=True)
             return
 
-        settings = self.bot.settings
-        embed = base_embed(
-            settings,
-            f"Invoice {order['invoice']}",
-            None,
-        )
-        embed.add_field(name="Product", value=f"**{order['product']}**", inline=False)
-        embed.add_field(name="Quantity", value=str(order["quantity"]), inline=True)
-        embed.add_field(name="Total", value=f"**{money(int(order['total']), settings)}**", inline=True)
-        embed.add_field(name="Status", value=f"**{order['status']}**", inline=True)
         payment_url = order["payment_url"] if "payment_url" in order.keys() else ""
-        if payment_url:
-            embed.add_field(name="Payment", value="QRIS", inline=False)
+        content_builder = lambda language: order_lookup_message(self.bot.settings, order, language)
         await interaction.response.send_message(
-            embed=embed,
-            view=CheckoutView(order["invoice"], int(order["total"]), payment_url or None),
+            view=CheckoutView(order["invoice"], int(order["total"]), payment_url, content_builder),
             ephemeral=True,
         )
 

@@ -1,19 +1,5 @@
 {
   "enabled": true,
   "poll_interval_seconds": 45,
-  "default_message": "Pembayaran sudah diterima. Produk sedang diproses oleh tim Vercettia Store.",
-  "products": {
-    "Alight Motion Private": "Isi detail produk Alight Motion Private di sini.",
-    "Canva Member": "Isi detail produk Canva Member di sini.",
-    "Canva Head": "Isi detail produk Canva Head di sini.",
-    "LokLok Basic Shar": "Isi detail produk LokLok Basic Shar di sini.",
-    "LokLok Standar Shar": "Isi detail produk LokLok Standar Shar di sini.",
-    "IQIYI Premium Shar": "Isi detail produk IQIYI Premium Shar di sini.",
-    "IQIYI Standard Shar": "Isi detail produk IQIYI Standard Shar di sini.",
-    "Prime Video Shar": "Isi detail produk Prime Video Shar di sini.",
-    "WeTV 6U": "Isi detail produk WeTV 6U di sini.",
-    "PicsArt Shar": "Isi detail produk PicsArt Shar di sini.",
-    "Youku Shar": "Isi detail produk Youku Shar di sini.",
-    "VIU Private": "Isi detail produk VIU Private di sini."
-  }
+  "manual_delivery_note": "Admin mengirim data akun premium langsung di ticket checkout setelah pembayaran terkonfirmasi."
 }

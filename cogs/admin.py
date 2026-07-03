@@ -7,7 +7,9 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.checks import admin_only
-from utils.embeds import base_embed, money
+from utils.messages import orders_message, statistic_message
+from utils.supplier_sync import refresh_supplier_products
+from utils.translate import TranslatableView
 
 
 class Admin(commands.Cog):
@@ -126,6 +128,27 @@ class Admin(commands.Cog):
         await self._safe_defer(interaction)
         await self._set_product_value(interaction, name, "status", status, "Status")
 
+    @app_commands.command(name="syncsupplierstock", description="Sync stok produk dari supplier Telegram.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def syncsupplierstock(self, interaction: discord.Interaction, dry_run: bool = False) -> None:
+        await self._safe_defer(interaction)
+        result = await refresh_supplier_products(
+            self.bot,
+            add_new_products=True,
+            save=not dry_run,
+        )
+        if result.error:
+            await interaction.followup.send(result.error, ephemeral=True)
+            return
+
+        title = "Preview sync stok supplier" if dry_run else "Sync stok supplier selesai"
+        lines = [f"Updated: {len(result.updated)}", f"Produk baru: {len(result.added)}"]
+        lines.extend(f"- {line}" for line in result.updated[:12])
+        lines.extend(f"- Baru: {name}" for name in result.added[:6])
+        summary = "\n".join(lines)
+        await interaction.followup.send(f"**{title}**\n{summary}", ephemeral=True)
+
     @app_commands.command(name="orders", description="Lihat order terbaru.")
     @app_commands.default_permissions(administrator=True)
     @admin_only()
@@ -133,21 +156,11 @@ class Admin(commands.Cog):
         await self._safe_defer(interaction)
         rows = await self.bot.db.list_orders(max(1, min(limit, 25)))
         settings = self.bot.settings
-        embed = base_embed(settings, "Order Desk", "Ringkasan invoice terbaru dari Vercettia Store.")
-        if not rows:
-            embed.description = "Belum ada order masuk."
-        for order in rows:
-            embed.add_field(
-                name=order["invoice"],
-                value=(
-                    f"Customer ID: `{order['user_id']}`\n"
-                    f"Item: **{order['product']}** x{order['quantity']}\n"
-                    f"Total: **{money(int(order['total']), settings)}**\n"
-                    f"Status: **{order['status']}**"
-                ),
-                inline=False,
-            )
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        content_builder = lambda language: orders_message(settings, rows, language)
+        await interaction.followup.send(
+            view=TranslatableView(content_builder),
+            ephemeral=True,
+        )
 
     @app_commands.command(name="statistic", description="Lihat statistik penjualan.")
     @app_commands.default_permissions(administrator=True)
@@ -156,10 +169,11 @@ class Admin(commands.Cog):
         await self._safe_defer(interaction)
         stats = await self.bot.db.statistics()
         settings = self.bot.settings
-        embed = base_embed(settings, "Store Performance", "Snapshot penjualan Vercettia Store saat ini.")
-        embed.add_field(name="Invoices", value=f"**{stats['orders_count']}**", inline=True)
-        embed.add_field(name="Gross Sales", value=f"**{money(stats['revenue'], settings)}**", inline=True)
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        content_builder = lambda language: statistic_message(settings, stats, language)
+        await interaction.followup.send(
+            view=TranslatableView(content_builder),
+            ephemeral=True,
+        )
 
     @app_commands.command(name="reload", description="Reload config tanpa restart bot.")
     @app_commands.default_permissions(administrator=True)

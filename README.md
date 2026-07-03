@@ -1,92 +1,112 @@
-# Vercettia Store
+# Vercettia Store Discord Bot
 
-Discord Marketplace Bot untuk penjualan akun premium digital menggunakan Python 3.12+, discord.py 2.x, dan SQLite async.
+Discord marketplace bot untuk katalog produk, checkout Pakasir QRIS, invoice ticket, support ticket, voucher, dan proses delivery manual oleh admin.
 
 ## Setup
-
-1. Install dependency:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Isi token bot di `.env`:
+Isi token bot di `.env`:
 
 ```env
 DISCORD_TOKEN=your_token
 GUILD_ID=optional_test_guild_id
 ```
 
-Gunakan `.env.example` sebagai template.
-
-3. Edit konfigurasi:
-
-- `config/settings.json` untuk role, channel, warna embed, logo, banner, dan branding.
-- `config/products.json` untuk kategori dan produk.
-- Copy `config/payment.example.json` menjadi `config/payment.json`, lalu isi metode pembayaran dan kredensial Pakasir.
-
-4. Jalankan bot:
+## Jalankan
 
 ```bash
 python bot.py
 ```
 
-## Slash Commands
+## Deploy Railway
 
-- `/store` menampilkan katalog dengan pagination dan select menu.
-- `/product` menampilkan detail produk dengan autocomplete dan tombol Buy Now.
-- `/payment` menampilkan metode pembayaran dari JSON.
-- `/paymentstatus` mengecek status invoice Pakasir.
-- `/ticket` mengirim panel ticket.
-- `/promo` mengirim embed promo.
-- `/voucher create`, `/voucher redeem`, `/voucher delete`.
-- `/invoice` mencari invoice milik customer.
-- `/addproduct`, `/removeproduct`, `/editproduct`, `/setprice`, `/setstock`, `/setstatus`.
-- `/orders`, `/statistic`, `/reload`, `/backup`.
+Project sudah siap untuk Railway sebagai worker service.
 
-## Catatan Konfigurasi
+1. Push repository ke GitHub.
+2. Buat project baru di Railway dari repository GitHub.
+3. Tambahkan Volume Railway dan mount ke `/data`.
+4. Isi Variables:
 
-Nilai `stock` `-1` berarti unlimited. Status produk yang siap dibeli harus bernilai `Ready`.
+```env
+DISCORD_TOKEN=token_bot_discord
+GUILD_ID=id_server_discord
+DATABASE_PATH=/data/database.db
 
-Role dan channel wajib diisi dengan ID Discord asli:
+PAKASIR_ENABLED=true
+PAKASIR_PROJECT_SLUG=slug_project_pakasir
+PAKASIR_API_KEY=api_key_pakasir
+PAKASIR_QRIS_ONLY=true
+PAKASIR_DEFAULT_METHOD=qris
 
-- `admin_role_id`
-- `staff_role_id`
-- `ticket_category_id`
-- `order_log_channel_id`
-
-Letakkan file gambar branding di:
-
-- `assets/logo.png`
-- `assets/banner.png`
-
-## Pakasir Checkout
-
-Setelah akun/proyek Pakasir siap, isi bagian `payment_gateway` di `config/payment.json`:
-
-```json
-{
-  "payment_gateway": {
-    "enabled": true,
-    "provider": "pakasir",
-    "base_url": "https://app.pakasir.com",
-    "project_slug": "slug-project-pakasir",
-    "api_key": "api-key-project-pakasir",
-    "qris_only": false,
-    "redirect_url": "",
-    "default_method": "qris"
-  }
-}
+SUPPLIER_ENABLED=true
+SUPPLIER_BOT_USERNAME=MeowtensOrder_bot
+SUPPLIER_STOCK_COMMAND=/stock
+TELEGRAM_API_ID=api_id_telegram
+TELEGRAM_API_HASH=api_hash_telegram
+TELEGRAM_SESSION_STRING=session_string_telegram
 ```
 
-Alur checkout:
+Untuk mendapatkan `TELEGRAM_SESSION_STRING`, login Telegram lokal dulu lalu export:
 
-1. Customer klik `Buy Now`.
-2. Bot membuat invoice lokal.
-3. Bot membuat link checkout Pakasir dengan invoice seperti `Vercettia-000001`.
-4. Customer menerima DM invoice dengan tombol `Pay Now`.
-5. Customer membayar melalui Pakasir.
-6. Customer atau admin menjalankan `/paymentstatus invoice_id`.
-7. Jika status Pakasir `completed`, invoice lokal berubah menjadi `Paid`.
+```bash
+python tools/supplier_login.py
+python tools/export_telegram_session.py
+```
 
-`project_slug` cukup untuk membuat link checkout. `api_key` diperlukan untuk cek status transaksi melalui API Pakasir.
+Copy output `export_telegram_session.py` ke variable Railway `TELEGRAM_SESSION_STRING`.
+
+Railway akan menjalankan:
+
+```bash
+python bot.py
+```
+
+## Config
+
+- `config/products.json` untuk kategori dan produk.
+- `config/payment.json` untuk Pakasir/payment gateway.
+- `config/supplier.json` untuk sync stok reseller dari bot Telegram supplier.
+- `config/delivery.json` untuk interval monitoring pembayaran. Data akun premium tetap dikirim manual oleh admin di ticket.
+- `config/settings.json` untuk role, channel, whitelist admin, status bot, dan pesan.
+
+## Commands
+
+- `/store`
+- `/product`
+- `/payment`
+- `/ticket`
+- `/promo`
+- `/voucher create`, `/voucher redeem`, `/voucher delete`
+- `/invoice`
+- `/addproduct`, `/removeproduct`, `/editproduct`
+- `/setprice`, `/setstock`, `/setstatus`
+- `/syncsupplierstock`
+- `/orders`, `/statistic`, `/reload`, `/backup`
+
+## Supplier Telegram
+
+Bot bisa sync stok dari supplier Telegram melalui session akun Telegram reseller.
+
+1. Isi `api_id` dan `api_hash` di `config/supplier.json`.
+2. Pastikan `bot_username` berisi `MeowtensOrder_bot`.
+3. Ubah `stock_command` sesuai command stok di bot supplier.
+4. Sesuaikan `product_map` jika nama produk supplier berbeda.
+5. Jalankan login sekali:
+
+```bash
+python tools/supplier_login.py
+```
+
+6. Aktifkan `"enabled": true`, lalu gunakan `/syncsupplierstock`.
+
+## Catatan
+
+File sensitif tetap di-ignore:
+
+- `.env`
+- `config/payment.json`
+- `database/database.db`
+- `logs/`

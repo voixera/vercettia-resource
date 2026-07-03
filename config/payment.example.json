@@ -8,7 +8,7 @@
     "qris_only": true,
     "redirect_url": "",
     "default_method": "qris",
-    "checkout_note": "Klik Pay Now untuk menyelesaikan pembayaran melalui Pakasir. Setelah membayar, gunakan Check Payment atau tunggu staff memverifikasi invoice."
+    "checkout_note": "Klik Pay Now untuk menyelesaikan pembayaran melalui Pakasir. Admin akan mengirim data akun premium di ticket setelah pembayaran terkonfirmasi."
   },
   "methods": [
     {

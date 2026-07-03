@@ -1,21 +1,22 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
 
 import discord
 
 from utils.checkout import CheckoutView
-from utils.embeds import compact_datetime, invoice_embed, money
-from utils.files import configured_files
+from utils.embeds import compact_datetime, money
+from utils.messages import invoice_message, order_log_message, panel
 from utils.pakasir import PakasirConfigError, PakasirGateway
 from utils.qris import make_qris_file
+from utils.tickets import create_private_ticket_channel, staff_mention
+from utils.translate import TranslatableView
 
 
 class BuyModal(discord.ui.Modal):
     def __init__(self, product: dict[str, Any]) -> None:
-        super().__init__(title=f"Checkout - {product['name']}")
+        super().__init__(title=f"Checkout Ticket - {product['name']}")
         self.product = product
         self.quantity = discord.ui.TextInput(
             label="Quantity",
@@ -38,6 +39,11 @@ class BuyModal(discord.ui.Modal):
         await interaction.response.defer(ephemeral=True, thinking=True)
         bot = interaction.client
         settings = getattr(bot, "settings", {})
+        guild = interaction.guild
+        if guild is None:
+            await interaction.followup.send("Checkout hanya bisa dibuat melalui server.", ephemeral=True)
+            return
+
         try:
             quantity = int(str(self.quantity.value).strip())
         except ValueError:
@@ -115,51 +121,65 @@ class BuyModal(discord.ui.Modal):
                 self.product["status"] = "Kosong"
             await bot.save_products_config()
 
-        embed = invoice_embed(settings, order, self.product)
+        payment_items: list[tuple[str, Any]]
         if payment_url:
-            if qris_text:
-                embed.set_image(url=f"attachment://qris-{order['invoice']}.png")
-            payment_lines = ["Pakasir QRIS"]
+            payment_items = [("Method", "Pakasir QRIS")]
             if pakasir_total:
-                payment_lines.append(f"Total bayar: **{money(int(pakasir_total), settings)}**")
+                payment_items.append(("Total Bayar", money(int(pakasir_total), settings)))
             if pakasir_expired:
-                payment_lines.append(f"Expired: **{compact_datetime(str(pakasir_expired))}**")
-            payment_lines.append("Scan QRIS atau gunakan tombol Pay Now.")
-            embed.add_field(name="Payment", value="\n".join(payment_lines), inline=False)
+                payment_items.append(("Expired", compact_datetime(str(pakasir_expired))))
+            payment_items.append(("QRIS", "Terlampir di invoice"))
+            payment_items.append(("Delivery", "Manual oleh admin di ticket"))
         else:
-            embed.add_field(
-                name="Payment",
-                value="Hubungi staff untuk instruksi pembayaran.",
-                inline=False,
-            )
-        base_dir = Path(__file__).resolve().parent.parent
-        files = configured_files(settings, base_dir)
-        checkout_view = CheckoutView(order["invoice"], total, payment_url)
+            payment_items = [("Status", "Hubungi staff untuk instruksi pembayaran")]
+        content_builder = lambda language: invoice_message(settings, order, self.product, payment_items, language)
+        checkout_view = CheckoutView(order["invoice"], total, payment_url, content_builder)
 
-        await interaction.followup.send(
-            "Invoice berhasil dibuat. Detail checkout sudah dikirim ke DM Anda.",
-            ephemeral=True,
+        channel = await create_private_ticket_channel(
+            guild,
+            interaction.user,
+            settings,
+            prefix="order",
+            reason=f"Vercettia Store checkout {order['invoice']}",
+        )
+        mention = staff_mention(guild, settings)
+        qris_files: list[discord.File] = []
+        if qris_text:
+            qris_files.append(make_qris_file(qris_text, order["invoice"]))
+
+        await channel.send(
+            f"{interaction.user.mention} {mention}\n"
+            f"Checkout `{order['invoice']}` sudah dibuat. Selesaikan pembayaran di ticket ini, "
+            "lalu tunggu admin mengirim data akun premium."
+        )
+        if qris_files:
+            await channel.send(view=checkout_view, files=qris_files)
+        else:
+            await channel.send(view=checkout_view)
+
+        from utils.views import CloseTicketView
+
+        await channel.send(
+            view=CloseTicketView(
+                interaction.user.id,
+                panel(
+                    "Ticket Control",
+                    (
+                        "Ticket Data",
+                        [
+                            ("Invoice", order["invoice"]),
+                            ("Status", "Open"),
+                            ("Delivery", "Admin akan mengirim data akun di sini"),
+                        ],
+                    ),
+                ),
+            )
         )
 
-        try:
-            dm_files = configured_files(settings, base_dir)
-            if qris_text:
-                dm_files.append(make_qris_file(qris_text, order["invoice"]))
-            await interaction.user.send(
-                embed=embed,
-                view=checkout_view,
-                files=dm_files,
-            )
-        except discord.Forbidden:
-            if qris_text:
-                files.append(make_qris_file(qris_text, order["invoice"]))
-            await interaction.followup.send(
-                "DM Anda tertutup, invoice dikirim di sini.",
-                embed=embed,
-                view=checkout_view,
-                files=files,
-                ephemeral=True,
-            )
+        await interaction.followup.send(
+            f"Checkout ticket dibuat: {channel.mention}. Lanjutkan pembayaran di ticket tersebut.",
+            ephemeral=True,
+        )
 
         await self._send_order_log(interaction, order, total)
 
@@ -177,20 +197,12 @@ class BuyModal(discord.ui.Modal):
             logging.warning("Order log channel is not configured or not found.")
             return
 
-        embed = discord.Embed(
-            title="New Checkout",
-            color=discord.Color(int(str(settings.get("embed_color", "#8B5CF6")).lstrip("#"), 16)),
-        )
-        embed.add_field(name="Customer", value=interaction.user.mention, inline=False)
-        embed.add_field(name="Invoice ID", value=order["invoice"], inline=True)
-        embed.add_field(name="Product", value=self.product["name"], inline=True)
-        embed.add_field(name="Quantity", value=str(order["quantity"]), inline=True)
-        embed.add_field(name="Harga", value=money(int(self.product["price"]), settings), inline=True)
-        embed.add_field(name="Total", value=f"**{money(total, settings)}**", inline=True)
-        embed.add_field(name="Status", value=order["status"], inline=True)
-        embed.add_field(name="Created At", value=order["date"], inline=False)
-        if order.get("payment_url"):
-            embed.add_field(name="Pakasir Checkout", value=order["payment_url"], inline=False)
-        if order.get("note"):
-            embed.add_field(name="Catatan", value=order["note"], inline=False)
-        await channel.send(embed=embed)
+        content_builder = lambda language: order_log_message(
+                settings,
+                interaction.user.mention,
+                order,
+                self.product,
+                total,
+                language,
+            )
+        await channel.send(view=TranslatableView(content_builder))

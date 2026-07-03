@@ -5,8 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.checks import admin_only
-from utils.embeds import base_embed
-from utils.files import configured_files
+from utils.messages import ticket_panel_message
 from utils.views import TicketPanelView
 
 
@@ -19,15 +18,8 @@ class Ticket(commands.Cog):
     @admin_only()
     async def ticket(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(thinking=True)
-        settings = self.bot.settings
         await interaction.followup.send(
-            embed=base_embed(
-                settings,
-                "Help Ticket",
-                "Gunakan ticket ini untuk kendala pembayaran, kendala produk, klaim order, atau bantuan lainnya.",
-            ),
             view=TicketPanelView(),
-            files=configured_files(settings, self.bot.db.path.parent.parent),
         )
 
 

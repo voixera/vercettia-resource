@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from pathlib import Path
+from datetime import datetime
 from typing import Any
 
 import discord
@@ -15,6 +14,14 @@ def color_from_settings(settings: dict[str, Any]) -> discord.Color:
 def money(value: int, settings: dict[str, Any]) -> str:
     currency = settings.get("currency", "Rp")
     return f"{currency} {value:,.0f}".replace(",", ".")
+
+
+def line(label: str, value: Any) -> str:
+    return f"• **{label}:** {value}"
+
+
+def section(*items: tuple[str, Any]) -> str:
+    return "\n".join(line(label, value) for label, value in items)
 
 
 def stock_text(stock: int) -> str:
@@ -64,20 +71,15 @@ def base_embed(
     settings: dict[str, Any],
     title: str,
     description: str | None = None,
-    include_assets: bool = True,
+    include_assets: bool = False,
 ) -> discord.Embed:
     embed = discord.Embed(
         title=title,
         description=description,
         color=color_from_settings(settings),
-        timestamp=datetime.now(UTC),
     )
     if settings.get("footer"):
         embed.set_footer(text=settings["footer"])
-    if include_assets and settings.get("logo") and (Path(__file__).resolve().parent.parent / settings["logo"]).exists():
-        embed.set_thumbnail(url=f"attachment://{settings['logo'].split('/')[-1]}")
-    if include_assets and settings.get("banner") and (Path(__file__).resolve().parent.parent / settings["banner"]).exists():
-        embed.set_image(url=f"attachment://{settings['banner'].split('/')[-1]}")
     return embed
 
 
@@ -89,13 +91,14 @@ def category_embed(
 ) -> discord.Embed:
     embed = base_embed(settings, name, None, include_assets=False)
     for product in products:
-        detail_lines = [
-            f"**Harga:** {money(int(product['price']), settings)}",
-            f"{product['type']} | {product_status(product)} | Stok {stock_text(int(product['stock']))}",
-        ]
         embed.add_field(
             name=display_product_name(product),
-            value="\n".join(detail_lines),
+            value=section(
+                ("Harga", money(int(product["price"]), settings)),
+                ("Akses", product["type"]),
+                ("Status", product_status(product)),
+                ("Stok", stock_text(int(product["stock"]))),
+            ),
             inline=False,
         )
     return embed
@@ -107,11 +110,20 @@ def product_embed(settings: dict[str, Any], product: dict[str, Any]) -> discord.
         display_product_name(product),
         None,
     )
-    embed.add_field(name="Plan", value=f"**{product['duration']}**", inline=True)
-    embed.add_field(name="Access", value=f"**{product['type']}**", inline=True)
-    embed.add_field(name="Harga", value=f"**{money(int(product['price']), settings)}**", inline=True)
-    embed.add_field(name="Status", value=f"**{product_status(product)}**", inline=True)
-    embed.add_field(name="Stock", value=f"**{stock_text(int(product['stock']))}**", inline=True)
+    embed.add_field(
+        name="Product Data:",
+        value=section(
+            ("Plan", product["duration"]),
+            ("Akses", product["type"]),
+            ("Harga", money(int(product["price"]), settings)),
+            ("Status", product_status(product)),
+            ("Stok", stock_text(int(product["stock"]))),
+        ),
+        inline=False,
+    )
+    description = str(product.get("description", "")).strip()
+    if description:
+        embed.add_field(name="Description:", value=description[:1024], inline=False)
     return embed
 
 
@@ -121,13 +133,17 @@ def invoice_embed(
     product: dict[str, Any],
 ) -> discord.Embed:
     embed = base_embed(settings, f"Invoice {order['invoice']}")
-    embed.add_field(name="Product", value=f"**{display_product_name(product)}**", inline=False)
     embed.add_field(
-        name="Details",
-        value=f"{product['duration']} | {product['type']} | Qty {order['quantity']}",
+        name="Order Data:",
+        value=section(
+            ("Product", display_product_name(product)),
+            ("Plan", product["duration"]),
+            ("Akses", product["type"]),
+            ("Quantity", order["quantity"]),
+            ("Harga", money(int(product["price"]), settings)),
+            ("Total", money(int(order["total"]), settings)),
+            ("Status", order["status"]),
+        ),
         inline=False,
     )
-    embed.add_field(name="Harga", value=money(int(product["price"]), settings), inline=True)
-    embed.add_field(name="Total", value=f"**{money(int(order['total']), settings)}**", inline=True)
-    embed.add_field(name="Status", value=f"**{order['status']}**", inline=True)
     return embed

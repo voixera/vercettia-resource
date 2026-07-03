@@ -7,7 +7,9 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.checks import admin_only
-from utils.embeds import base_embed, money
+from utils.embeds import money
+from utils.messages import panel
+from utils.translate import TranslatableView
 
 
 class VoucherGroup(app_commands.Group):
@@ -62,11 +64,24 @@ class VoucherGroup(app_commands.Group):
         final_total = max(0, total - discount_amount)
 
         settings = self.bot.settings
-        embed = base_embed(settings, "Voucher Applied")
-        embed.add_field(name="Kode", value=voucher["code"], inline=True)
-        embed.add_field(name="Diskon", value=money(discount_amount, settings), inline=True)
-        embed.add_field(name="Total Akhir", value=money(final_total, settings), inline=True)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        def content_builder(language: str) -> str:
+            return panel(
+            "Voucher Applied",
+            (
+                "Voucher Data",
+                [
+                    ("Kode", voucher["code"]),
+                    ("Diskon", money(discount_amount, settings)),
+                    ("Total Akhir", money(final_total, settings)),
+                ],
+            ),
+                language=language,
+            )
+
+        await interaction.response.send_message(
+            view=TranslatableView(content_builder),
+            ephemeral=True,
+        )
 
     @app_commands.command(name="delete", description="Hapus voucher.")
     @app_commands.default_permissions(administrator=True)

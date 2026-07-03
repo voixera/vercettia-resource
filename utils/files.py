@@ -7,6 +7,9 @@ import discord
 
 
 def configured_files(settings: dict[str, Any], base_dir: Path) -> list[discord.File]:
+    if not settings.get("embed_assets_enabled", False):
+        return []
+
     files: list[discord.File] = []
     for key in ("logo", "banner"):
         raw = settings.get(key)

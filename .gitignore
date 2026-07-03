@@ -1,5 +1,9 @@
+*.env
 .env
 config/payment.json
+config/supplier.json
+*.session
+*.session-journal
 database/database.db
 database/backups/
 logs/
