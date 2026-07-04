@@ -17,6 +17,7 @@ from utils.translate import TranslatableView
 QRIS_KEYS = {
     "payment_number",
     "qris",
+    "qr",
     "qr_string",
     "qr_code",
     "qr_content",
@@ -174,11 +175,7 @@ class BuyModal(discord.ui.Modal):
         if gateway.is_ready_for_checkout:
             try:
                 payment_url = gateway.build_payment_url(order["invoice"], total)
-                if (
-                    gateway.direct_qris_enabled
-                    and gateway.is_ready_for_status_check
-                    and gateway.default_method == "qris"
-                ):
+                if gateway.is_ready_for_status_check and gateway.default_method == "qris":
                     try:
                         payment_data = await gateway.create_transaction(order["invoice"], total, method="qris")
                         qris_value = _find_nested_value(payment_data, QRIS_KEYS)
@@ -217,7 +214,7 @@ class BuyModal(discord.ui.Modal):
                 payment_items.append(("Total Bayar", money(int(pakasir_total), settings)))
             if pakasir_expired:
                 payment_items.append(("Expired", compact_datetime(str(pakasir_expired))))
-            payment_items.append(("QRIS", "Terlampir di invoice"))
+            payment_items.append(("QRIS", "Terlampir di invoice" if qris_text else "Belum tersedia otomatis"))
             payment_items.append(("Delivery", "Manual oleh admin di ticket"))
         else:
             payment_items = [("Status", "Hubungi staff untuk instruksi pembayaran")]
@@ -235,9 +232,8 @@ class BuyModal(discord.ui.Modal):
 
         mention = staff_mention(guild, settings)
         qris_files: list[discord.File] = []
-        qris_payload = qris_text or payment_url
-        if qris_payload:
-            qris_files.append(make_qris_file(qris_payload, order["invoice"]))
+        if qris_text:
+            qris_files.append(make_qris_file(qris_text, order["invoice"]))
         qris_filename = qris_files[0].filename if qris_files else None
         checkout_view = CheckoutView(
             order["invoice"],

@@ -282,7 +282,7 @@ def payment_message(settings: dict[str, Any], methods: list[dict[str, Any]], gat
                 [
                     ("Method", "QRIS"),
                     ("Status", "Active"),
-                    ("Invoice", "Pay Now tersedia di setiap checkout"),
+                    ("Invoice", "QRIS otomatis tersedia di setiap checkout"),
                 ],
             )
         )

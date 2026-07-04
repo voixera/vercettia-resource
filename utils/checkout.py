@@ -28,7 +28,7 @@ class CheckoutView(TranslatableView):
         qris_container = discord.ui.Container(accent_color=0x8B5CF6)
         qris_container.add_item(
             discord.ui.TextDisplay(
-                "**QRIS Payment**\nScan QRIS di bawah ini. Jika gambar tidak terbuka, gunakan tombol Pay Now."
+                "**QRIS Payment**\nScan QRIS di bawah ini melalui aplikasi pembayaran kamu."
             )
         )
         qris_container.add_item(
@@ -42,12 +42,4 @@ class CheckoutView(TranslatableView):
         self.add_item(qris_container)
 
     def extra_items(self) -> list[discord.ui.Item]:
-        if not self.payment_url:
-            return []
-        return [
-            discord.ui.Button(
-                label="Pay Now",
-                style=discord.ButtonStyle.link,
-                url=self.payment_url,
-            )
-        ]
+        return []

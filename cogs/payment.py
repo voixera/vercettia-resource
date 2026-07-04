@@ -50,7 +50,7 @@ class Payment(commands.Cog):
                     ("Method", gateway.default_method.upper()),
                     ("Destination", gateway.base_url),
                     ("Project", gateway.project_slug or "-"),
-                    ("QRIS", "Hosted Checkout" if not gateway.direct_qris_enabled else "Direct QRIS API"),
+                    ("QRIS", "Direct QRIS API"),
                     ("Invoice", test_url),
                     ("Type", gateway.masked_api_key()),
                 ],

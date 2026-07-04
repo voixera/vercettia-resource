@@ -6,10 +6,10 @@
     "project_slug": "isi-slug-project-pakasir",
     "api_key": "isi-api-key-pakasir",
     "qris_only": true,
-    "direct_qris_enabled": false,
+    "direct_qris_enabled": true,
     "redirect_url": "",
     "default_method": "qris",
-    "checkout_note": "Klik Pay Now untuk menyelesaikan pembayaran melalui Pakasir. Admin akan mengirim data akun premium di ticket setelah pembayaran terkonfirmasi."
+    "checkout_note": "Scan QRIS pada invoice untuk menyelesaikan pembayaran. Admin akan mengirim data akun premium di ticket setelah pembayaran terkonfirmasi."
   },
   "methods": [
     {

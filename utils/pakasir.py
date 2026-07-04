@@ -23,7 +23,7 @@ class PakasirGateway:
         self.project_slug = str(gateway.get("project_slug", "")).strip()
         self.api_key = str(gateway.get("api_key", "")).strip()
         self.qris_only = bool(gateway.get("qris_only", False))
-        self.direct_qris_enabled = bool(gateway.get("direct_qris_enabled", False))
+        self.direct_qris_enabled = bool(gateway.get("direct_qris_enabled", True))
         self.redirect_url = str(gateway.get("redirect_url", "")).strip()
         self.default_method = str(gateway.get("default_method", "qris")).strip().lower()
         self.checkout_note = str(gateway.get("checkout_note", "")).strip()

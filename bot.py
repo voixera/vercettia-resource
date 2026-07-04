@@ -312,7 +312,7 @@ class VercettiaBot(commands.Bot):
                     "qris_only": cls._env_bool("PAKASIR_QRIS_ONLY", bool(gateway.get("qris_only", True))),
                     "direct_qris_enabled": cls._env_bool(
                         "PAKASIR_DIRECT_QRIS",
-                        bool(gateway.get("direct_qris_enabled", False)),
+                        bool(gateway.get("direct_qris_enabled", True)),
                     ),
                     "redirect_url": os.getenv("PAKASIR_REDIRECT_URL", gateway.get("redirect_url", "")),
                     "default_method": os.getenv("PAKASIR_DEFAULT_METHOD", gateway.get("default_method", "qris")),
