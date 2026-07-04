@@ -61,13 +61,10 @@ class VercettiaBot(commands.Bot):
         )
         self.fulfillment_worker.start()
 
-        guild_id = os.getenv("GUILD_ID")
-        if guild_id:
-            guild = discord.Object(id=int(guild_id))
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
+        if self._env_bool("DISCORD_SYNC_COMMANDS", False):
+            await self.sync_application_commands()
         else:
-            await self.tree.sync()
+            logging.info("Skipping application command sync. Set DISCORD_SYNC_COMMANDS=true to sync slash commands.")
 
     async def close(self) -> None:
         self.fulfillment_worker.cancel()
@@ -127,6 +124,18 @@ class VercettiaBot(commands.Bot):
 
     async def save_supplier_config(self) -> None:
         self._write_json(CONFIG_DIR / "supplier.json", self.supplier_config)
+
+    async def sync_application_commands(self) -> None:
+        guild_id = os.getenv("GUILD_ID")
+        if guild_id:
+            guild = discord.Object(id=int(guild_id))
+            self.tree.copy_global_to(guild=guild)
+            synced = await self.tree.sync(guild=guild)
+            logging.info("Synced %s slash commands to guild %s.", len(synced), guild_id)
+            return
+
+        synced = await self.tree.sync()
+        logging.info("Synced %s global slash commands.", len(synced))
 
     @property
     def settings(self) -> dict[str, Any]:

@@ -46,6 +46,7 @@ GUILD_ID=id_server_discord
 DATABASE_PATH=/data/database.db
 DISCORD_MEMBERS_INTENT=true
 DISCORD_VOICE_STATES_INTENT=true
+DISCORD_SYNC_COMMANDS=false
 
 PAKASIR_ENABLED=true
 PAKASIR_PROJECT_SLUG=slug_project_pakasir
@@ -72,6 +73,8 @@ Di Discord Developer Portal, buka aplikasi bot lalu aktifkan:
 - Server Members Intent
 
 Intent ini wajib untuk welcome/leave dan verify role. Jika belum aktif, Discord akan menolak koneksi dengan error `PrivilegedIntentsRequired`.
+
+Untuk update slash command, set `DISCORD_SYNC_COMMANDS=true` sementara lalu deploy sekali. Setelah command muncul di server, kembalikan ke `false` agar Railway restart tidak kena rate limit Discord `429`.
 
 Untuk mendapatkan `TELEGRAM_SESSION_STRING`, login Telegram lokal dulu lalu export:
 
