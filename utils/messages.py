@@ -124,9 +124,20 @@ def sorted_products(products: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(products, key=lambda product: display_product_name(product).casefold())
 
 
+def is_product_sold_out(product: dict[str, Any]) -> bool:
+    status = str(product.get("status", "")).strip().casefold()
+    stock = int(product.get("stock", 0))
+    return stock == 0 or status in {"kosong", "empty", "out of stock", "sold out", "habis"}
+
+
+def is_product_orderable(product: dict[str, Any]) -> bool:
+    status = str(product.get("status", "Ready")).strip().casefold()
+    return not is_product_sold_out(product) and status == "ready" and int(product.get("price", 0)) > 0
+
+
 def display_product_name_markdown(product: dict[str, Any]) -> str:
     name = display_product_name(product)
-    if int(product.get("stock", 0)) == 0:
+    if is_product_sold_out(product):
         return f"~~{name}~~"
     return name
 
@@ -161,7 +172,7 @@ def catalog_message(
     categories: dict[str, Any],
     products: list[dict[str, Any]],
     language: str = "id",
-    limit: int = 3500,
+    limit: int | None = None,
 ) -> str:
     grouped: dict[str, list[dict[str, Any]]] = {}
     for product in products:
@@ -186,7 +197,7 @@ def catalog_message(
                 f"{tr('Stok', language)}: {stock_text(int(product['stock']))}"
             )
             next_content = "\n".join([*lines, item])
-            if len(next_content) > limit:
+            if limit is not None and len(next_content) > limit:
                 lines.append("- Produk lain tersedia di menu pilihan." if language == "id" else "- More products are available in the selection menu.")
                 return "\n".join(lines)
             lines.append(item)

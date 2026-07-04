@@ -5,7 +5,15 @@ from typing import Any
 
 import discord
 
-from utils.messages import catalog_message, product_message, panel, sorted_products, ticket_panel_message
+from utils.messages import (
+    catalog_message,
+    is_product_orderable,
+    is_product_sold_out,
+    panel,
+    product_message,
+    sorted_products,
+    ticket_panel_message,
+)
 from utils.modals import BuyModal
 from utils.supplier_sync import refresh_supplier_products
 from utils.tickets import create_private_ticket_channel, staff_mention
@@ -51,11 +59,7 @@ class BuyView(TranslatableView):
         super().__init__(lambda language: product_message(settings, product, language), timeout=300)
 
     def extra_items(self) -> list[discord.ui.Item]:
-        is_available = (
-            int(self.product.get("stock", 0)) != 0
-            and int(self.product.get("price", 0)) > 0
-            and str(self.product.get("status", "Ready")).casefold() == "ready"
-        )
+        is_available = is_product_orderable(self.product)
         button = discord.ui.Button(
             label="Buy Now" if is_available else "Unavailable",
             style=discord.ButtonStyle.primary if is_available else discord.ButtonStyle.secondary,
@@ -100,21 +104,51 @@ class BuyView(TranslatableView):
 
 
 class ProductSelect(discord.ui.Select):
-    def __init__(self, products: list[dict[str, Any]], settings: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        products: list[dict[str, Any]],
+        settings: dict[str, Any],
+        *,
+        page: int = 0,
+        page_size: int = 25,
+    ) -> None:
         sorted_items = sorted_products(products)
+        page_count = max(1, (len(sorted_items) + page_size - 1) // page_size)
+        page = min(max(page, 0), page_count - 1)
+        start = page * page_size
+        visible_items = sorted_items[start : start + page_size]
         options = [
             discord.SelectOption(
-                label=product["name"][:100],
-                description=f"{product['duration']} | {product['type']} | Rp {int(product['price']):,}".replace(",", ".")[:100],
+                label=self._option_label(product),
+                description=self._option_description(product),
                 value=product["name"],
             )
-            for product in sorted_items[:25]
+            for product in visible_items
         ]
         if not options:
             options = [discord.SelectOption(label="Belum ada produk", value="empty")]
-        super().__init__(placeholder="Pilih produk", min_values=1, max_values=1, options=options)
+        placeholder = f"Pilih produk ({start + 1}-{start + len(visible_items)} dari {len(sorted_items)})"
+        super().__init__(placeholder=placeholder[:100], min_values=1, max_values=1, options=options)
         self.products = {product["name"]: product for product in sorted_items}
         self.settings = settings
+
+    @staticmethod
+    def _option_label(product: dict[str, Any]) -> str:
+        name = str(product["name"])
+        if is_product_sold_out(product):
+            name = f"HABIS - {name}"
+        return name[:100]
+
+    @staticmethod
+    def _option_description(product: dict[str, Any]) -> str:
+        stock = int(product.get("stock", 0))
+        stock_value = "Unlimited" if stock == -1 else str(stock)
+        description = (
+            f"{product['duration']} | {product['type']} | "
+            f"Stock {stock_value} | {product.get('status', 'Ready')} | "
+            f"Rp {int(product['price']):,}"
+        )
+        return description.replace(",", ".")[:100]
 
     async def callback(self, interaction: discord.Interaction) -> None:
         if self.values[0] == "empty":
@@ -133,10 +167,12 @@ class StoreView(TranslatableView):
         settings: dict[str, Any],
         categories: dict[str, Any],
         products: list[dict[str, Any]],
+        page: int = 0,
     ) -> None:
         self.settings = settings
         self.categories = categories
         self.products = products
+        self.page = page
         self.grouped = self._group_products()
         super().__init__(
             lambda language: catalog_message(settings, categories, products, language),
@@ -152,7 +188,23 @@ class StoreView(TranslatableView):
             style=discord.ButtonStyle.secondary,
         )
         refresh_button.callback = self.refresh_stock
-        return [ProductSelect(self.products, self.settings), refresh_button]
+        items: list[discord.ui.Item] = [ProductSelect(self.products, self.settings, page=self.page), refresh_button]
+        page_count = max(1, (len(self.products) + 24) // 25)
+        if page_count > 1:
+            previous_button = discord.ui.Button(
+                label="Previous",
+                style=discord.ButtonStyle.secondary,
+                disabled=self.page <= 0,
+            )
+            next_button = discord.ui.Button(
+                label="Next",
+                style=discord.ButtonStyle.secondary,
+                disabled=self.page >= page_count - 1,
+            )
+            previous_button.callback = self.previous_page
+            next_button.callback = self.next_page
+            items.extend([previous_button, next_button])
+        return items
 
     def _group_products(self) -> dict[str, list[dict[str, Any]]]:
         grouped: dict[str, list[dict[str, Any]]] = {}
@@ -170,11 +222,24 @@ class StoreView(TranslatableView):
         settings = getattr(interaction.client, "settings", self.settings)
         products = getattr(interaction.client, "products_config", {}).get("products", [])
         categories = getattr(interaction.client, "products_config", {}).get("categories", {})
+        page_count = max(1, (len(products) + 24) // 25)
+        page = min(self.page, page_count - 1)
         try:
-            await interaction.message.edit(view=StoreView(settings, categories, products))
+            await interaction.message.edit(view=StoreView(settings, categories, products, page=page))
         except (AttributeError, discord.HTTPException):
             pass
         await interaction.followup.send(f"Product list refreshed: {message}.", ephemeral=True)
+
+    async def previous_page(self, interaction: discord.Interaction) -> None:
+        await interaction.response.edit_message(
+            view=StoreView(self.settings, self.categories, self.products, page=max(0, self.page - 1))
+        )
+
+    async def next_page(self, interaction: discord.Interaction) -> None:
+        page_count = max(1, (len(self.products) + 24) // 25)
+        await interaction.response.edit_message(
+            view=StoreView(self.settings, self.categories, self.products, page=min(page_count - 1, self.page + 1))
+        )
 
 
 class TicketPanelView(PanelView):
