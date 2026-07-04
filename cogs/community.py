@@ -5,8 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.checks import admin_only
-from utils.messages import panel
-from utils.translate import StaticPanelView
+from utils.member_cards import make_member_card
 from utils.views import VerifyPanelView
 
 
@@ -253,27 +252,20 @@ class Community(commands.Cog):
         if not isinstance(channel, discord.TextChannel):
             return
 
-        title = "Welcome to Vercettia" if joined else "Member Left"
-        status = "Joined" if joined else "Left"
-        intro = (
-            f"Selamat datang {member.mention}. Nikmati akses Vercettia Store dan gunakan ticket jika butuh bantuan."
+        content = (
+            f"Welcome {member.mention} to {member.guild.name}!"
             if joined
-            else f"{member} sudah keluar dari server."
+            else f"{member.mention} left {member.guild.name}."
         )
-        content = panel(
-            title,
-            (
-                "Member Data",
-                [
-                    ("User", member.mention if joined else str(member)),
-                    ("Status", status),
-                    ("Members", member.guild.member_count or "-"),
-                ],
-            ),
-            intro=intro,
+        card = await make_member_card(
+            member,
+            joined=joined,
+            base_dir=self.bot.base_dir,
+            settings=settings,
         )
         await channel.send(
-            view=StaticPanelView(content, accent_color=0x8B5CF6),
+            content=content,
+            file=card,
             allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False),
         )
 
