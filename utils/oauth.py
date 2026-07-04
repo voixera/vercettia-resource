@@ -17,40 +17,16 @@ from discord.ext import commands
 
 DISCORD_API = "https://discord.com/api/v10"
 DEFAULT_RULES = [
-    """⩩﹕𝖲𝖾𝗋𝗏𝖾𝗋 𝖱𝗎𝗅𝖾𝗌
-
-**Rule #1 — Be Respectful.**
-Treat everyone with respect, including staff and other members. Harassment, insults, discrimination, or toxic behavior will not be tolerated.
-
-**Rule #2 — No Spam or Flooding.**
-Do not spam messages, emojis, stickers, mentions, or create unnecessary tickets. Keep conversations organized.
-
-**Rule #3 — No Advertising.**
-Advertising other stores, services, Discord servers, or social media without staff permission is strictly prohibited.
-
-**Rule #4 — Payments Are Final.**
-All successful payments are considered final. Refunds are only provided if Vercettia Store is unable to deliver the purchased product or service.
-
-**Rule #5 — Keep Your Account Secure.**
-You are responsible for the security of your own account. Do not share your passwords, verification codes, or personal information with anyone.
-
-**Rule #6 — No Account Abuse.**
-Do not misuse, resell, exploit, or abuse any products purchased from Vercettia Store. Violations may result in removal of support or a permanent ban.
-
-**Rule #7 — No Fraudulent Activity.**
-Chargebacks, fake payment proofs, unauthorized transactions, or any form of payment fraud will result in an immediate blacklist and permanent ban.
-
-**Rule #8 — Product Availability.**
-Some products may become unavailable or change due to updates from the original service providers. We will always inform customers of any significant changes.
-
-**Rule #9 — Follow Seller Instructions.**
-Please cooperate with staff during purchases, support requests, or dispute resolutions. Ignoring staff instructions may delay service.
-
-**Rule #10 — Follow Discord's Terms.**
-All members must follow Discord's Terms of Service and Community Guidelines. Any violation may result in appropriate action.
-
-Terms of Service — https://discord.com/terms
-Community Guidelines — https://discord.com/guidelines""",
+    "Hormati seluruh member dan staff. Toxic, harassment, diskriminasi, dan provokasi tidak ditoleransi.",
+    "Dilarang spam chat, mention, sticker, emoji, atau membuat ticket tanpa kebutuhan jelas.",
+    "Promosi store, server, jasa, atau sosial media lain wajib mendapat izin staff.",
+    "Pembayaran yang sudah berhasil bersifat final. Refund hanya diproses jika produk tidak dapat dikirim oleh Vercettia Store.",
+    "Jaga keamanan akun pribadi. Jangan bagikan password, kode OTP, atau data sensitif kepada siapa pun.",
+    "Produk yang dibeli tidak boleh disalahgunakan, dieksploitasi, atau dijual ulang tanpa izin.",
+    "Bukti pembayaran palsu, chargeback, dan aktivitas fraud akan berujung blacklist permanen.",
+    "Ketersediaan produk dapat berubah mengikuti layanan terkait. Staff akan memberi informasi jika ada perubahan penting.",
+    "Ikuti arahan staff saat order, support, atau penyelesaian kendala agar proses tetap cepat dan rapi.",
+    "Seluruh member wajib mengikuti Discord Terms of Service dan Community Guidelines.",
 ]
 
 

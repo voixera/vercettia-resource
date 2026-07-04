@@ -120,7 +120,7 @@ Copy output `export_telegram_session.py` ke variable Railway `TELEGRAM_SESSION_S
 - `/setprice`, `/setstock`, `/setstatus`
 - `/syncsupplierstock`
 - `/orders`, `/statistic`, `/reload`, `/backup`
-- `/welcome_setup`, `/leave_setup`, `/rules_setup`, `/verify_panel`
+- `/welcome_setup`, `/leave_setup`, `/rules_setup`, `/verify_panel`, `/verify_lockdown`
 - `/gift_role`, `/give_role`, `/remove_role`
 - `/join_voice`, `/leave_voice`
 
@@ -138,7 +138,15 @@ Setup:
 
 ```text
 /rules_setup channel:#rules
-/verify_panel role:@Member channel:#verify rules_channel:#rules
+/verify_panel role:@Member channel:#verify rules_channel:#rules lockdown:true
+```
+
+`/verify_panel` dengan `lockdown:true` akan membuat member yang belum verify hanya bisa melihat channel verify dan rules. Channel lain disembunyikan dari `@everyone`, lalu role member diberi akses ke channel publik yang sebelumnya memang terbuka.
+
+Jika panel sudah pernah dibuat dan hanya ingin mengatur permission:
+
+```text
+/verify_lockdown role:@Member verify_channel:#verify rules_channel:#rules
 ```
 
 ## Supplier Telegram

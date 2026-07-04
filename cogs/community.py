@@ -51,13 +51,17 @@ class Community(commands.Cog):
         role: discord.Role,
         channel: discord.TextChannel | None = None,
         rules_channel: discord.TextChannel | None = None,
+        lockdown: bool = True,
     ) -> None:
         target_channel = channel or interaction.channel
         if not isinstance(target_channel, discord.TextChannel):
             await interaction.response.send_message("Pilih text channel untuk panel verify.", ephemeral=True)
             return
+        if interaction.guild is None:
+            await interaction.response.send_message("Command ini hanya bisa digunakan di server.", ephemeral=True)
+            return
 
-        bot_member = interaction.guild.me if interaction.guild else None
+        bot_member = interaction.guild.me
         if bot_member and role >= bot_member.top_role:
             await interaction.response.send_message(
                 "Role member harus berada di bawah role bot agar bisa diberikan otomatis.",
@@ -65,14 +69,27 @@ class Community(commands.Cog):
             )
             return
 
+        await interaction.response.defer(ephemeral=True, thinking=True)
         self.bot.settings["member_role_id"] = role.id
         if rules_channel:
             self.bot.settings["rules_channel_id"] = rules_channel.id
         await self.bot.save_settings_config()
-        await target_channel.send(view=VerifyPanelView())
-        rules_text = f" Rules: {rules_channel.mention}." if rules_channel else ""
-        await interaction.response.send_message(
-            f"Panel verify dikirim ke {target_channel.mention}. Role member: {role.mention}.{rules_text}",
+
+        effective_rules_channel = rules_channel or self._configured_rules_channel(interaction.guild)
+        await target_channel.send(view=VerifyPanelView(interaction.guild, self.bot.settings))
+        rules_text = f" Rules: {effective_rules_channel.mention}." if effective_rules_channel else ""
+        lockdown_text = ""
+        if lockdown:
+            applied, protected, failed = await self._apply_verify_lockdown(
+                interaction.guild,
+                role,
+                target_channel,
+                effective_rules_channel,
+            )
+            lockdown_text = f"\nLockdown: {applied} channel diset, {protected} private channel dijaga, {failed} gagal."
+
+        await interaction.followup.send(
+            f"Panel verify dikirim ke {target_channel.mention}. Role member: {role.mention}.{rules_text}{lockdown_text}",
             ephemeral=True,
         )
 
@@ -83,6 +100,46 @@ class Community(commands.Cog):
         self.bot.settings["rules_channel_id"] = channel.id
         await self.bot.save_settings_config()
         await interaction.response.send_message(f"Rules channel diset ke {channel.mention}.", ephemeral=True)
+
+    @app_commands.command(name="verify_lockdown", description="Sembunyikan channel untuk member yang belum verify.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def verify_lockdown(
+        self,
+        interaction: discord.Interaction,
+        role: discord.Role,
+        verify_channel: discord.TextChannel,
+        rules_channel: discord.TextChannel | None = None,
+    ) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message("Command ini hanya bisa digunakan di server.", ephemeral=True)
+            return
+
+        bot_member = interaction.guild.me
+        if bot_member and role >= bot_member.top_role:
+            await interaction.response.send_message(
+                "Role member harus berada di bawah role bot agar permission bisa diatur.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        self.bot.settings["member_role_id"] = role.id
+        if rules_channel:
+            self.bot.settings["rules_channel_id"] = rules_channel.id
+        await self.bot.save_settings_config()
+
+        effective_rules_channel = rules_channel or self._configured_rules_channel(interaction.guild)
+        applied, protected, failed = await self._apply_verify_lockdown(
+            interaction.guild,
+            role,
+            verify_channel,
+            effective_rules_channel,
+        )
+        await interaction.followup.send(
+            f"Verify lockdown selesai. {applied} channel diset, {protected} private channel dijaga, {failed} gagal.",
+            ephemeral=True,
+        )
 
     @app_commands.command(name="give_role", description="Berikan role ke member.")
     @app_commands.default_permissions(administrator=True)
@@ -268,6 +325,82 @@ class Community(commands.Cog):
                 return False
 
         return True
+
+    def _configured_rules_channel(self, guild: discord.Guild) -> discord.TextChannel | None:
+        channel_id = int(getattr(self.bot, "settings", {}).get("rules_channel_id", 0))
+        channel = guild.get_channel(channel_id) if channel_id else None
+        return channel if isinstance(channel, discord.TextChannel) else None
+
+    async def _apply_verify_lockdown(
+        self,
+        guild: discord.Guild,
+        member_role: discord.Role,
+        verify_channel: discord.TextChannel,
+        rules_channel: discord.TextChannel | None,
+    ) -> tuple[int, int, int]:
+        allowed_unverified_ids = {verify_channel.id}
+        if rules_channel:
+            allowed_unverified_ids.add(rules_channel.id)
+
+        applied = 0
+        protected_private = 0
+        failed = 0
+        manageable_types = (
+            discord.CategoryChannel,
+            discord.TextChannel,
+            discord.VoiceChannel,
+            discord.StageChannel,
+            discord.ForumChannel,
+        )
+
+        for channel in guild.channels:
+            if not isinstance(channel, manageable_types):
+                continue
+
+            try:
+                everyone_overwrite = channel.overwrites_for(guild.default_role)
+                member_overwrite = channel.overwrites_for(member_role)
+
+                if channel.id in allowed_unverified_ids:
+                    everyone_overwrite.view_channel = True
+                    if isinstance(channel, discord.TextChannel):
+                        everyone_overwrite.send_messages = False
+                        everyone_overwrite.read_message_history = True
+                    await channel.set_permissions(
+                        guild.default_role,
+                        overwrite=everyone_overwrite,
+                        reason="Vercettia verify channel access",
+                    )
+                    applied += 1
+                    continue
+
+                was_public = everyone_overwrite.view_channel is not False
+                member_already_allowed = member_overwrite.view_channel is True
+
+                everyone_overwrite.view_channel = False
+                await channel.set_permissions(
+                    guild.default_role,
+                    overwrite=everyone_overwrite,
+                    reason="Vercettia verify lockdown",
+                )
+
+                if was_public or member_already_allowed:
+                    member_overwrite.view_channel = True
+                    if isinstance(channel, discord.TextChannel):
+                        member_overwrite.read_message_history = True
+                    await channel.set_permissions(
+                        member_role,
+                        overwrite=member_overwrite,
+                        reason="Vercettia member channel access",
+                    )
+                else:
+                    protected_private += 1
+
+                applied += 1
+            except discord.HTTPException:
+                failed += 1
+
+        return applied, protected_private, failed
 
 
 async def setup(bot: commands.Bot) -> None:

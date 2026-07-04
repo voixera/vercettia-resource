@@ -200,35 +200,52 @@ async def _send_oauth_step(interaction: discord.Interaction) -> None:
 
 
 class VerifyPanelView(discord.ui.LayoutView):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        guild: discord.Guild | None = None,
+        settings: dict[str, Any] | None = None,
+    ) -> None:
+        self.guild = guild
+        self.settings = settings or {}
         super().__init__(timeout=None)
         self.render()
 
     def render(self) -> None:
         container = discord.ui.Container(accent_color=0x8B5CF6)
-        container.add_item(discord.ui.TextDisplay("**Vercettia Verification**"))
+        header = (
+            "**VERIFIKASI ANGGOTA**\n"
+            "```text\n"
+            "Welcome to Vercettia Store\n"
+            "Verify your account to unlock the server.\n"
+            "```"
+        )
+        logo_url = str(self.settings.get("verify_logo_url", "")).strip()
+        if logo_url.startswith(("http://", "https://")):
+            container.add_item(discord.ui.Section(header, accessory=discord.ui.Thumbnail(logo_url)))
+        else:
+            container.add_item(discord.ui.TextDisplay(header))
         container.add_item(discord.ui.Separator())
         container.add_item(
             discord.ui.TextDisplay(
-                "Klik verify untuk authorize akun Discord kamu. Setelah authorize, rules akan tampil "
-                "di halaman verifikasi dan role member diberikan otomatis setelah rules disetujui."
+                "**Why verify?**\n"
+                "✓ Unlock all public channels\n"
+                "✓ Keep the server clean from spam accounts\n"
+                "✓ Protect order, payment, and ticket access\n"
+                "✓ Rejoin access stays easier for verified members"
             )
         )
         container.add_item(discord.ui.Separator())
         container.add_item(
             discord.ui.TextDisplay(
-                "**Alur Join:**\n"
-                "- Klik Verify Member\n"
-                "- Authorize Vercettia melalui Discord\n"
-                "- Rules tampil di halaman verifikasi\n"
-                "- Setujui rules dan role member otomatis aktif"
+                f"**{self._verified_count_text()}**\n"
+                f"{self._footer_text()}"
             )
         )
         self.add_item(container)
 
         button = discord.ui.Button(
-            label="Verify Member",
-            style=discord.ButtonStyle.primary,
+            label="Klik untuk Verify",
+            style=discord.ButtonStyle.success,
             custom_id="vercettia_read_rules",
         )
         button.callback = self.start_verify
@@ -239,6 +256,23 @@ class VerifyPanelView(discord.ui.LayoutView):
 
     async def start_verify(self, interaction: discord.Interaction) -> None:
         await _send_oauth_step(interaction)
+
+    def _verified_count_text(self) -> str:
+        if self.guild is None:
+            return "Secure verification is active."
+
+        role_id = int(self.settings.get("member_role_id", 0))
+        role = self.guild.get_role(role_id) if role_id else None
+        if role is None:
+            return "Member role belum diset."
+
+        verified_count = sum(1 for member in role.members if not member.bot)
+        return f"{verified_count} member telah terverifikasi"
+
+    def _footer_text(self) -> str:
+        store_name = str(self.settings.get("store_name", "Vercettia Store"))
+        now = discord.utils.utcnow().strftime("%d/%m/%Y %H:%M")
+        return f"{store_name} • Secure Access System • {now}"
 
 
 class LegacyVerifyMemberView(discord.ui.View):

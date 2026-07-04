@@ -5,6 +5,7 @@
   "footer": "Vercettia Store • Premium Account Marketplace",
   "logo": "assets/logo.png",
   "banner": "assets/banner.png",
+  "verify_logo_url": "",
   "support_server": "https://discord.gg/your-server",
   "admin_role_id": 0,
   "admin_user_ids": [
@@ -23,10 +24,16 @@
     "interval_seconds": 60
   },
   "verification_rules": [
-    "Wajib membaca dan mengikuti seluruh rules server.",
-    "Dilarang spam, scam, toxic, atau promosi tanpa izin.",
-    "Gunakan ticket untuk order, kendala payment, dan bantuan produk.",
-    "Semua transaksi wajib melalui channel dan payment resmi Vercettia Store."
+    "Hormati seluruh member dan staff. Toxic, harassment, diskriminasi, dan provokasi tidak ditoleransi.",
+    "Dilarang spam chat, mention, sticker, emoji, atau membuat ticket tanpa kebutuhan jelas.",
+    "Promosi store, server, jasa, atau sosial media lain wajib mendapat izin staff.",
+    "Pembayaran yang sudah berhasil bersifat final. Refund hanya diproses jika produk tidak dapat dikirim oleh Vercettia Store.",
+    "Jaga keamanan akun pribadi. Jangan bagikan password, kode OTP, atau data sensitif kepada siapa pun.",
+    "Produk yang dibeli tidak boleh disalahgunakan, dieksploitasi, atau dijual ulang tanpa izin.",
+    "Bukti pembayaran palsu, chargeback, dan aktivitas fraud akan berujung blacklist permanen.",
+    "Ketersediaan produk dapat berubah mengikuti layanan terkait. Staff akan memberi informasi jika ada perubahan penting.",
+    "Ikuti arahan staff saat order, support, atau penyelesaian kendala agar proses tetap cepat dan rapi.",
+    "Seluruh member wajib mengikuti Discord Terms of Service dan Community Guidelines."
   ],
   "currency": "Rp",
   "invoice_prefix": "Vercettia",
