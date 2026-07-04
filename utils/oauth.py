@@ -14,6 +14,8 @@ import discord
 from aiohttp import web
 from discord.ext import commands
 
+from utils.verification_panels import refresh_verify_panels
+
 
 DISCORD_API = "https://discord.com/api/v10"
 DEFAULT_RULES = [
@@ -200,6 +202,7 @@ class OAuthVerificationServer:
         except discord.Forbidden:
             return False, "Bot belum punya izin memberi role. Naikkan role bot di atas role member."
 
+        await refresh_verify_panels(self.bot, guild)
         return True, f"Verify berhasil. Role {role.name} sudah aktif di akun kamu."
 
     def _rules_page(self, token: str, user: dict[str, Any]) -> str:

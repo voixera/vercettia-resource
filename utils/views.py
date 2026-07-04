@@ -10,6 +10,7 @@ from utils.modals import BuyModal
 from utils.supplier_sync import refresh_supplier_products
 from utils.tickets import create_private_ticket_channel, staff_mention
 from utils.translate import PanelView, TranslatableView
+from utils.verification_panels import refresh_verify_panels
 
 
 async def _refresh_supplier_from_interaction(interaction: discord.Interaction) -> tuple[bool, str]:
@@ -246,6 +247,7 @@ async def _grant_member_role(interaction: discord.Interaction) -> tuple[bool, st
     except discord.Forbidden:
         return False, "Bot belum punya izin untuk memberi role ini. Naikkan role bot di atas role member."
 
+    await refresh_verify_panels(interaction.client, interaction.guild)
     return True, f"Verifikasi berhasil. Role {role.mention} sudah ditambahkan."
 
 

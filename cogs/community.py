@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from utils.checks import admin_only
 from utils.member_cards import make_member_card
+from utils.verification_panels import remember_verify_panel
 from utils.views import VerifyPanelView
 
 
@@ -75,7 +76,8 @@ class Community(commands.Cog):
         await self.bot.save_settings_config()
 
         effective_rules_channel = rules_channel or self._configured_rules_channel(interaction.guild)
-        await target_channel.send(view=VerifyPanelView(interaction.guild, self.bot.settings))
+        panel_message = await target_channel.send(view=VerifyPanelView(interaction.guild, self.bot.settings))
+        await remember_verify_panel(self.bot, panel_message)
         rules_text = f" Rules: {effective_rules_channel.mention}." if effective_rules_channel else ""
         lockdown_text = ""
         if lockdown:
