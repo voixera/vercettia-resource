@@ -191,7 +191,6 @@ class BuyModal(discord.ui.Modal):
         else:
             payment_items = [("Status", "Hubungi staff untuk instruksi pembayaran")]
         content_builder = lambda language: invoice_message(settings, order, self.product, payment_items, language)
-        checkout_view = CheckoutView(order["invoice"], total, payment_url, content_builder)
 
         channel = await create_private_ticket_channel(
             guild,
@@ -205,6 +204,14 @@ class BuyModal(discord.ui.Modal):
         qris_payload = qris_text or payment_url
         if qris_payload:
             qris_files.append(make_qris_file(qris_payload, order["invoice"]))
+        qris_filename = qris_files[0].filename if qris_files else None
+        checkout_view = CheckoutView(
+            order["invoice"],
+            total,
+            payment_url,
+            content_builder,
+            qris_filename=qris_filename,
+        )
 
         await channel.send(
             f"{interaction.user.mention} {mention}\n"
