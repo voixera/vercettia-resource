@@ -165,7 +165,11 @@ class BuyModal(discord.ui.Modal):
         if gateway.is_ready_for_checkout:
             try:
                 payment_url = gateway.build_payment_url(order["invoice"], total)
-                if gateway.is_ready_for_status_check and gateway.default_method == "qris":
+                if (
+                    gateway.direct_qris_enabled
+                    and gateway.is_ready_for_status_check
+                    and gateway.default_method == "qris"
+                ):
                     try:
                         payment_data = await gateway.create_transaction(order["invoice"], total, method="qris")
                         qris_value = _find_nested_value(payment_data, QRIS_KEYS)
