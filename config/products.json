@@ -15,7 +15,7 @@
       "duration": "1 Tahun",
       "type": "Private",
       "price": 49000,
-      "stock": 21,
+      "stock": 20,
       "status": "Ready",
       "description": "Akun premium private Alight Motion untuk akses tahunan.",
       "category": "editing"
@@ -25,7 +25,7 @@
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 15000,
-      "stock": 17,
+      "stock": 16,
       "status": "Ready",
       "description": "Invite member Canva Pro untuk kebutuhan desain harian.",
       "category": "editing"
@@ -55,7 +55,7 @@
       "duration": "1 Bulan",
       "type": "Shared",
       "price": 35000,
-      "stock": 4,
+      "stock": 3,
       "status": "Ready",
       "description": "Paket LokLok Standar shared dengan akses premium.",
       "category": "streaming"

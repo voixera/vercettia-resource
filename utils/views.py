@@ -138,6 +138,67 @@ class TicketPanelView(PanelView):
         await interaction.followup.send(f"Help ticket dibuat: {channel.mention}", ephemeral=True)
 
 
+class VerifyPanelView(discord.ui.LayoutView):
+    def __init__(self) -> None:
+        super().__init__(timeout=None)
+        self.render()
+
+    def render(self) -> None:
+        container = discord.ui.Container(accent_color=0x8B5CF6)
+        container.add_item(discord.ui.TextDisplay("**Vercettia Verification**"))
+        container.add_item(discord.ui.Separator())
+        container.add_item(
+            discord.ui.TextDisplay(
+                "Klik tombol di bawah untuk mendapatkan role member dan membuka akses server."
+            )
+        )
+        self.add_item(container)
+
+        button = discord.ui.Button(
+            label="Verify Member",
+            style=discord.ButtonStyle.primary,
+            custom_id="vercettia_verify_member",
+        )
+        button.callback = self.verify
+
+        actions = discord.ui.Container()
+        actions.add_item(discord.ui.ActionRow(button))
+        self.add_item(actions)
+
+    async def verify(self, interaction: discord.Interaction) -> None:
+        if interaction.guild is None or not isinstance(interaction.user, discord.Member):
+            await interaction.response.send_message("Verify hanya bisa digunakan di server.", ephemeral=True)
+            return
+
+        settings = getattr(interaction.client, "settings", {})
+        role_id = int(settings.get("member_role_id", 0))
+        role = interaction.guild.get_role(role_id) if role_id else None
+        if role is None:
+            await interaction.response.send_message(
+                "Role member belum diset. Minta admin menjalankan /verify_panel terlebih dahulu.",
+                ephemeral=True,
+            )
+            return
+
+        if role in interaction.user.roles:
+            await interaction.response.send_message("Akun kamu sudah terverifikasi.", ephemeral=True)
+            return
+
+        try:
+            await interaction.user.add_roles(role, reason="Vercettia member verification")
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "Bot belum punya izin untuk memberi role ini. Naikkan role bot di atas role member.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            f"Verifikasi berhasil. Role {role.mention} sudah ditambahkan.",
+            ephemeral=True,
+        )
+
+
 class CloseTicketModal(discord.ui.Modal):
     def __init__(self, opener_id: int) -> None:
         super().__init__(title="Close Ticket")

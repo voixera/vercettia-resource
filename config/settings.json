@@ -12,8 +12,15 @@
     1120002718090674197
   ],
   "staff_role_id": 0,
+  "member_role_id": 0,
+  "welcome_channel_id": 0,
+  "leave_channel_id": 0,
   "ticket_category_id": 0,
   "order_log_channel_id": 0,
+  "product_auto_refresh": {
+    "enabled": true,
+    "interval_seconds": 60
+  },
   "currency": "Rp",
   "invoice_prefix": "Vercettia",
   "products_per_page": 5,

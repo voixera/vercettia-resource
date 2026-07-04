@@ -48,11 +48,15 @@ async def refresh_supplier_products(
         old_stock = int(product.get("stock", 0))
         old_status = str(product.get("status", ""))
         new_status = "Kosong" if item.stock == 0 else "Ready"
+        should_update_status = old_status.casefold() != "need price"
+        stock_changed = old_stock != item.stock
+        status_changed = should_update_status and old_status.casefold() != new_status.casefold()
         if apply_changes:
             product["stock"] = item.stock
-            if old_status.casefold() != "need price":
+            if should_update_status:
                 product["status"] = new_status
-        result.updated.append(f"{item.local_name}: {old_stock} -> {item.stock}")
+        if stock_changed or status_changed:
+            result.updated.append(f"{item.local_name}: {old_stock} -> {item.stock}")
 
     if add_new_products:
         for item in snapshot.catalog:
@@ -89,6 +93,6 @@ def _new_product_from_supplier(name: str, stock: int) -> dict:
         "price": 0,
         "stock": stock,
         "status": "Need Price",
-        "description": "Produk baru dari supplier. Set harga sebelum dijual.",
+        "description": "Produk baru tersedia. Set harga sebelum dijual.",
         "category": category,
     }

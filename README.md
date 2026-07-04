@@ -33,11 +33,13 @@ python bot.py
 ## Deploy Railway
 
 Project sudah siap untuk Railway sebagai worker service.
+Build Railway dikunci ke Python lewat `nixpacks.toml`, jadi folder `web/` tidak akan dipilih sebagai app utama.
 
 1. Push repository ke GitHub.
 2. Buat project baru di Railway dari repository GitHub.
 3. Tambahkan Volume Railway dan mount ke `/data`.
-4. Isi Variables:
+4. Pastikan service type berjalan sebagai worker, bukan web server.
+5. Isi Variables:
 
 ```env
 DISCORD_TOKEN=token_bot_discord
@@ -94,6 +96,9 @@ python bot.py
 - `/setprice`, `/setstock`, `/setstatus`
 - `/syncsupplierstock`
 - `/orders`, `/statistic`, `/reload`, `/backup`
+- `/welcome_setup`, `/leave_setup`, `/verify_panel`
+- `/gift_role`, `/give_role`, `/remove_role`
+- `/join_voice`, `/leave_voice`
 
 ## Supplier Telegram
 

@@ -182,6 +182,7 @@ class Admin(commands.Cog):
         await self._safe_defer(interaction)
         await self.bot.reload_configs()
         await self.bot.sync_products_to_database()
+        self.bot.dispatch("products_updated")
         await interaction.followup.send("Config berhasil direload.", ephemeral=True)
 
     @app_commands.command(name="backup", description="Backup database.")

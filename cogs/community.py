@@ -1,0 +1,262 @@
+from __future__ import annotations
+
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+from utils.checks import admin_only
+from utils.messages import panel
+from utils.translate import StaticPanelView
+from utils.views import VerifyPanelView
+
+
+class Community(commands.Cog):
+    def __init__(self, bot: commands.Bot) -> None:
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member) -> None:
+        if member.bot:
+            return
+        await self._send_member_log(member, joined=True)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member) -> None:
+        if member.bot:
+            return
+        await self._send_member_log(member, joined=False)
+
+    @app_commands.command(name="welcome_setup", description="Set channel welcome Vercettia.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def welcome_setup(self, interaction: discord.Interaction, channel: discord.TextChannel) -> None:
+        self.bot.settings["welcome_channel_id"] = channel.id
+        await self.bot.save_settings_config()
+        await interaction.response.send_message(f"Welcome channel diset ke {channel.mention}.", ephemeral=True)
+
+    @app_commands.command(name="leave_setup", description="Set channel leave Vercettia.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def leave_setup(self, interaction: discord.Interaction, channel: discord.TextChannel) -> None:
+        self.bot.settings["leave_channel_id"] = channel.id
+        await self.bot.save_settings_config()
+        await interaction.response.send_message(f"Leave channel diset ke {channel.mention}.", ephemeral=True)
+
+    @app_commands.command(name="verify_panel", description="Kirim panel verify dan set role member.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def verify_panel(
+        self,
+        interaction: discord.Interaction,
+        role: discord.Role,
+        channel: discord.TextChannel | None = None,
+    ) -> None:
+        target_channel = channel or interaction.channel
+        if not isinstance(target_channel, discord.TextChannel):
+            await interaction.response.send_message("Pilih text channel untuk panel verify.", ephemeral=True)
+            return
+
+        bot_member = interaction.guild.me if interaction.guild else None
+        if bot_member and role >= bot_member.top_role:
+            await interaction.response.send_message(
+                "Role member harus berada di bawah role bot agar bisa diberikan otomatis.",
+                ephemeral=True,
+            )
+            return
+
+        self.bot.settings["member_role_id"] = role.id
+        await self.bot.save_settings_config()
+        await target_channel.send(view=VerifyPanelView())
+        await interaction.response.send_message(
+            f"Panel verify dikirim ke {target_channel.mention}. Role member: {role.mention}.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(name="give_role", description="Berikan role ke member.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def give_role(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        role: discord.Role,
+        reason: str | None = None,
+    ) -> None:
+        await self._give_role(interaction, member, role, reason)
+
+    @app_commands.command(name="gift_role", description="Gift role ke member.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def gift_role(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        role: discord.Role,
+        reason: str | None = None,
+    ) -> None:
+        await self._give_role(interaction, member, role, reason)
+
+    @app_commands.command(name="remove_role", description="Hapus role dari member.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def remove_role(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        role: discord.Role,
+        reason: str | None = None,
+    ) -> None:
+        if not await self._can_manage_role(interaction, role):
+            return
+
+        try:
+            await member.remove_roles(role, reason=reason or f"Removed by {interaction.user}")
+        except discord.Forbidden:
+            await interaction.response.send_message("Bot belum punya izin untuk menghapus role itu.", ephemeral=True)
+            return
+        await interaction.response.send_message(
+            f"Role {role.mention} sudah dihapus dari {member.mention}.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(name="join_voice", description="Masukkan bot ke voice channel.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def join_voice(
+        self,
+        interaction: discord.Interaction,
+        channel: discord.VoiceChannel | None = None,
+    ) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message("Command ini hanya bisa digunakan di server.", ephemeral=True)
+            return
+
+        target_channel = channel
+        if target_channel is None and isinstance(interaction.user, discord.Member) and interaction.user.voice:
+            target_channel = interaction.user.voice.channel
+
+        if target_channel is None:
+            await interaction.response.send_message(
+                "Masuk voice dulu atau pilih voice channel di command.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        try:
+            voice_client = interaction.guild.voice_client
+            if voice_client and voice_client.is_connected():
+                await voice_client.move_to(target_channel)
+            else:
+                await target_channel.connect()
+        except discord.Forbidden:
+            await interaction.followup.send("Bot belum punya izin connect ke voice channel itu.", ephemeral=True)
+            return
+        except RuntimeError:
+            await interaction.followup.send(
+                "Voice dependency belum aktif. Jalankan install requirements agar PyNaCl terpasang.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.followup.send(f"Bot masuk ke voice channel {target_channel.mention}.", ephemeral=True)
+
+    @app_commands.command(name="leave_voice", description="Keluarkan bot dari voice channel.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def leave_voice(self, interaction: discord.Interaction) -> None:
+        voice_client = interaction.guild.voice_client if interaction.guild else None
+        if not voice_client or not voice_client.is_connected():
+            await interaction.response.send_message("Bot sedang tidak berada di voice channel.", ephemeral=True)
+            return
+
+        await voice_client.disconnect(force=True)
+        await interaction.response.send_message("Bot sudah keluar dari voice channel.", ephemeral=True)
+
+    async def _send_member_log(self, member: discord.Member, *, joined: bool) -> None:
+        settings = getattr(self.bot, "settings", {})
+        channel_key = "welcome_channel_id" if joined else "leave_channel_id"
+        channel_id = int(settings.get(channel_key, 0))
+        if not channel_id:
+            return
+
+        channel = member.guild.get_channel(channel_id)
+        if not isinstance(channel, discord.TextChannel):
+            return
+
+        title = "Welcome to Vercettia" if joined else "Member Left"
+        status = "Joined" if joined else "Left"
+        intro = (
+            f"Selamat datang {member.mention}. Nikmati akses Vercettia Store dan gunakan ticket jika butuh bantuan."
+            if joined
+            else f"{member} sudah keluar dari server."
+        )
+        content = panel(
+            title,
+            (
+                "Member Data",
+                [
+                    ("User", member.mention if joined else str(member)),
+                    ("Status", status),
+                    ("Members", member.guild.member_count or "-"),
+                ],
+            ),
+            intro=intro,
+        )
+        await channel.send(
+            view=StaticPanelView(content, accent_color=0x8B5CF6),
+            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False),
+        )
+
+    async def _give_role(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        role: discord.Role,
+        reason: str | None,
+    ) -> None:
+        if not await self._can_manage_role(interaction, role):
+            return
+
+        try:
+            await member.add_roles(role, reason=reason or f"Given by {interaction.user}")
+        except discord.Forbidden:
+            await interaction.response.send_message("Bot belum punya izin untuk memberi role itu.", ephemeral=True)
+            return
+        await interaction.response.send_message(
+            f"Role {role.mention} sudah diberikan ke {member.mention}.",
+            ephemeral=True,
+        )
+
+    async def _can_manage_role(self, interaction: discord.Interaction, role: discord.Role) -> bool:
+        if interaction.guild is None:
+            await interaction.response.send_message("Command ini hanya bisa digunakan di server.", ephemeral=True)
+            return False
+
+        if role.is_default():
+            await interaction.response.send_message("Role @everyone tidak bisa dikelola lewat command ini.", ephemeral=True)
+            return False
+
+        bot_member = interaction.guild.me
+        if bot_member and role >= bot_member.top_role:
+            await interaction.response.send_message(
+                "Role target harus berada di bawah role bot.",
+                ephemeral=True,
+            )
+            return False
+
+        if isinstance(interaction.user, discord.Member) and not interaction.user.guild_permissions.administrator:
+            admin_role_id = int(getattr(self.bot, "settings", {}).get("admin_role_id", 0))
+            admin_role = interaction.guild.get_role(admin_role_id) if admin_role_id else None
+            if admin_role and role >= admin_role:
+                await interaction.response.send_message(
+                    "Role ini hanya bisa dikelola oleh administrator server.",
+                    ephemeral=True,
+                )
+                return False
+
+        return True
+
+
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Community(bot))

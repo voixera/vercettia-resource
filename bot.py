@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from database.database import Database
 from utils.logger import setup_logging
 from utils.pakasir import PakasirGateway
-from utils.views import TicketPanelView
+from utils.views import TicketPanelView, VerifyPanelView
 
 
 BASE_DIR = Path(__file__).parent
@@ -22,6 +22,7 @@ CONFIG_DIR = BASE_DIR / "config"
 COGS = (
     "cogs.store",
     "cogs.admin",
+    "cogs.community",
     "cogs.ticket",
     "cogs.payment",
     "cogs.voucher",
@@ -33,6 +34,8 @@ class VercettiaBot(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.guilds = True
+        intents.members = True
+        intents.voice_states = True
         super().__init__(command_prefix=commands.when_mentioned, intents=intents)
         self.base_dir = BASE_DIR
         self.configs: dict[str, Any] = {}
@@ -50,6 +53,7 @@ class VercettiaBot(commands.Bot):
             await self.load_extension(cog)
 
         self.add_view(TicketPanelView())
+        self.add_view(VerifyPanelView())
 
         self.fulfillment_worker.change_interval(
             seconds=int(self.delivery_config.get("poll_interval_seconds", 45))
@@ -115,6 +119,10 @@ class VercettiaBot(commands.Bot):
     async def save_products_config(self) -> None:
         self._write_json(CONFIG_DIR / "products.json", self.products_config)
         await self.sync_products_to_database()
+        self.dispatch("products_updated")
+
+    async def save_settings_config(self) -> None:
+        self._write_json(CONFIG_DIR / "settings.json", self.settings)
 
     async def save_supplier_config(self) -> None:
         self._write_json(CONFIG_DIR / "supplier.json", self.supplier_config)

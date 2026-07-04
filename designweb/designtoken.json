@@ -1,163 +1,218 @@
 {
   "color": {
-    "ice-white": {
-      "$value": "#d8eaff",
-      "$type": "color",
-      "$description": "Ice White — Primary text and dominant border color — cool blue-tinted white that doubles as hairline borders, card outlines, and link underlines, creating a wireframe-in-light effect across all surfaces"
-    },
-    "void-black": {
+    "void": {
       "$value": "#000000",
       "$type": "color",
-      "$description": "Void Black — Deepest surface — page canvas and footer base"
+      "$description": "Void — Page background, all structural borders, primary text on light surfaces — the absolute black that makes the dashed containment lines read as ink on paper"
     },
     "carbon": {
-      "$value": "#0d0d0f",
+      "$value": "#1c1c1c",
       "$type": "color",
-      "$description": "Carbon — Card surface — sits one shade above void, used for elevated content blocks"
+      "$description": "Carbon — Elevated surface — card backgrounds, section fills, the canvas where the hero spotlight lands; lifted one step from Void but barely"
     },
     "graphite": {
-      "$value": "#232529",
+      "$value": "#4d4d4d",
       "$type": "color",
-      "$description": "Graphite — Body background and footer border surface — mid-layer charcoal"
-    },
-    "slate": {
-      "$value": "#2b2f33",
-      "$type": "color",
-      "$description": "Slate — Card backgrounds and the most common elevated surface — the default panel"
-    },
-    "iron": {
-      "$value": "#41464c",
-      "$type": "color",
-      "$description": "Iron — Muted body text and subtle dividers — secondary text level"
+      "$description": "Graphite — Tertiary borders and disabled outlines, dividers in dense lists"
     },
     "steel": {
-      "$value": "#565e66",
+      "$value": "#808080",
       "$type": "color",
-      "$description": "Steel — Tertiary body text and low-emphasis borders"
+      "$description": "Steel — Body text secondary, metadata labels, muted borders, checkbox/divider lines on dark"
     },
-    "fog": {
-      "$value": "#6c757f",
+    "ash": {
+      "$value": "#ababab",
       "$type": "color",
-      "$description": "Fog — Helper text and low-contrast borders — the quietest readable neutral"
+      "$description": "Ash — Helper text, caption-level metadata, tertiary text on dark surfaces"
     },
-    "iron-edge": {
-      "$value": "#565657",
+    "paper": {
+      "$value": "#ffffff",
       "$type": "color",
-      "$description": "Iron Edge — Medium-contrast borders and link outlines"
+      "$description": "Paper — Primary text, logo mark, active nav text, button borders, eyebrow chips — the one bright stroke against the void"
     },
-    "electric-cobalt": {
-      "$value": "#1f58f2",
+    "periwinkle-annotation": {
+      "$value": "#7089ba",
       "$type": "color",
-      "$description": "Electric Cobalt — Violet wash for highlight backgrounds, decorative bands, and soft emphasis behind content. Do not promote it to the primary CTA color"
-    },
-    "signal-orange": {
-      "$value": "#ff4105",
-      "$type": "color",
-      "$description": "Signal Orange — Orange outline accent for tags, dividers, and focused UI edges. Do not promote it to the primary CTA color"
+      "$description": "Periwinkle Annotation — Decorative icon fills, data-node accents, subtle highlight washes on feature illustrations, checkmark accents — the only chromatic mark in the system, rationed to annotation roles"
     }
   },
   "font": {
-    "monument": {
-      "$value": "Monument",
+    "sans-serif": {
+      "$value": "sans-serif",
       "$type": "fontFamily",
-      "$description": "Display and heading type — custom geometric sans used exclusively at weight 400. Headlines reach 96px with line-height 1.00, letter-spacing -0.03em. This single-weight approach forces the type to command through size alone, not boldness — a whisper-loud philosophy. Body-level Monument at 16-24px handles secondary text and large UI labels."
+      "$description": "sans-serif — detected in extracted data but not described by AI"
     },
-    "mono": {
-      "$value": "Mono",
+    "raveo-variable": {
+      "$value": "Raveo Variable",
       "$type": "fontFamily",
-      "$description": "Micro-labels, nav items, and small-caps category tags — monospaced at 10-14px with extreme tracking (0.06-0.16em). The wide letter-spacing on uppercase labels creates a scientific-instrument read, like serial numbers on laboratory equipment."
+      "$description": "Primary face for all display, heading, body, and nav text. Weight 1000 at 70px is the signature display; weight 500 for subheadings; weight 400 for body. The 1000 weight is the system's defining move — a single blocky headline silhouette against the void does more work than any color or shadow could."
+    },
+    "geist-mono": {
+      "$value": "Geist Mono",
+      "$type": "fontFamily",
+      "$description": "Eyebrow chips, version tags (\"NEW · INDEX 2.0 EARLY PREVIEW\"), step labels, and all-caps micro-labels. Sets a technical/code-adjacent tone that reinforces the blueprint metaphor. Tracked +0.02em for legibility at small sizes."
     }
   },
   "typography": {
     "xs": {
       "$value": {
-        "fontFamily": "Monument",
-        "fontSize": "10px",
-        "fontWeight": 400,
-        "lineHeight": 1.5
+        "fontFamily": "Geist Mono",
+        "fontSize": "9px",
+        "fontWeight": 500,
+        "lineHeight": 1.6
       },
       "$type": "typography",
-      "$description": "Typography step xs at 10px"
+      "$description": "Typography step xs at 9px"
     },
     "xs-2": {
       "$value": {
-        "fontFamily": "Mono",
-        "fontSize": "10px",
+        "fontFamily": "sans-serif",
+        "fontSize": "12px",
         "fontWeight": 400,
-        "lineHeight": 1
+        "lineHeight": 1.2
       },
       "$type": "typography",
-      "$description": "Typography step xs-2 at 10px"
+      "$description": "Typography step xs-2 at 12px"
     },
     "xs-3": {
       "$value": {
-        "fontFamily": "Mono",
+        "fontFamily": "Raveo Variable Variable",
         "fontSize": "12px",
-        "fontWeight": 400,
-        "lineHeight": 1.5
+        "fontWeight": 1000,
+        "lineHeight": 1.6
       },
       "$type": "typography",
       "$description": "Typography step xs-3 at 12px"
     },
+    "xs-4": {
+      "$value": {
+        "fontFamily": "Raveo Variable Variable",
+        "fontSize": "12px",
+        "fontWeight": 500,
+        "lineHeight": 1.6
+      },
+      "$type": "typography",
+      "$description": "Typography step xs-4 at 12px"
+    },
+    "xs-5": {
+      "$value": {
+        "fontFamily": "Raveo Variable Variable",
+        "fontSize": "12px",
+        "fontWeight": 400,
+        "lineHeight": 1.2
+      },
+      "$type": "typography",
+      "$description": "Typography step xs-5 at 12px"
+    },
+    "xs-6": {
+      "$value": {
+        "fontFamily": "Raveo Variable Variable",
+        "fontSize": "12px",
+        "fontWeight": 1000,
+        "lineHeight": 1.8
+      },
+      "$type": "typography",
+      "$description": "Typography step xs-6 at 12px"
+    },
+    "xs-7": {
+      "$value": {
+        "fontFamily": "Geist Mono",
+        "fontSize": "12px",
+        "fontWeight": 500,
+        "lineHeight": 1.6
+      },
+      "$type": "typography",
+      "$description": "Typography step xs-7 at 12px"
+    },
+    "xs-8": {
+      "$value": {
+        "fontFamily": "Geist Mono",
+        "fontSize": "12px",
+        "fontWeight": 500,
+        "lineHeight": 1.6
+      },
+      "$type": "typography",
+      "$description": "Typography step xs-8 at 12px"
+    },
     "sm": {
       "$value": {
-        "fontFamily": "Mono",
+        "fontFamily": "Raveo Variable Variable",
         "fontSize": "14px",
         "fontWeight": 400,
-        "lineHeight": 0.8
+        "lineHeight": 1.2
       },
       "$type": "typography",
       "$description": "Typography step sm at 14px"
     },
     "sm-2": {
       "$value": {
-        "fontFamily": "Mono",
+        "fontFamily": "Raveo Variable Variable",
         "fontSize": "14px",
-        "fontWeight": 400,
-        "lineHeight": 1
+        "fontWeight": 1000,
+        "lineHeight": 1.7
       },
       "$type": "typography",
       "$description": "Typography step sm-2 at 14px"
     },
+    "sm-3": {
+      "$value": {
+        "fontFamily": "Raveo Variable Variable",
+        "fontSize": "14px",
+        "fontWeight": 1000,
+        "lineHeight": 1.5
+      },
+      "$type": "typography",
+      "$description": "Typography step sm-3 at 14px"
+    },
     "base": {
       "$value": {
-        "fontFamily": "Monument",
+        "fontFamily": "Raveo Variable Variable",
         "fontSize": "16px",
-        "fontWeight": 400,
-        "lineHeight": 1.46
+        "fontWeight": 1000,
+        "lineHeight": 1.5
       },
       "$type": "typography",
       "$description": "Typography step base at 16px"
     },
+    "base-2": {
+      "$value": {
+        "fontFamily": "Raveo Variable Variable",
+        "fontSize": "16px",
+        "fontWeight": 1000,
+        "lineHeight": 1.5
+      },
+      "$type": "typography",
+      "$description": "Typography step base-2 at 16px"
+    },
     "2xl": {
       "$value": {
-        "fontFamily": "Monument",
+        "fontFamily": "Raveo Variable Variable",
         "fontSize": "24px",
-        "fontWeight": 400,
-        "lineHeight": 1.24
+        "fontWeight": 1000,
+        "lineHeight": 1.4
       },
       "$type": "typography",
       "$description": "Typography step 2xl at 24px"
     },
+    "3xl": {
+      "$value": {
+        "fontFamily": "Raveo Variable Variable",
+        "fontSize": "32px",
+        "fontWeight": 1000,
+        "lineHeight": 1.2
+      },
+      "$type": "typography",
+      "$description": "Typography step 3xl at 32px"
+    },
     "5xl": {
       "$value": {
-        "fontFamily": "Monument",
-        "fontSize": "64px",
-        "fontWeight": 400,
-        "lineHeight": 1.06
+        "fontFamily": "Raveo Variable Variable",
+        "fontSize": "70px",
+        "fontWeight": 1000,
+        "lineHeight": 1.1
       },
       "$type": "typography",
-      "$description": "Typography step 5xl at 64px"
-    },
-    "5xl-2": {
-      "$value": {
-        "fontFamily": "Monument",
-        "fontSize": "96px",
-        "fontWeight": 400,
-        "lineHeight": 1
-      },
-      "$type": "typography",
-      "$description": "Typography step 5xl-2 at 96px"
+      "$description": "Typography step 5xl at 70px"
     }
   },
   "spacing": {
@@ -166,10 +221,30 @@
       "$type": "dimension",
       "$description": "Spacing 4px"
     },
+    "5": {
+      "$value": "5px",
+      "$type": "dimension",
+      "$description": "Spacing 5px"
+    },
+    "6": {
+      "$value": "6px",
+      "$type": "dimension",
+      "$description": "Spacing 6px"
+    },
     "8": {
       "$value": "8px",
       "$type": "dimension",
       "$description": "Spacing 8px"
+    },
+    "9": {
+      "$value": "9px",
+      "$type": "dimension",
+      "$description": "Spacing 9px"
+    },
+    "10": {
+      "$value": "10px",
+      "$type": "dimension",
+      "$description": "Spacing 10px"
     },
     "12": {
       "$value": "12px",
@@ -181,6 +256,11 @@
       "$type": "dimension",
       "$description": "Spacing 16px"
     },
+    "18": {
+      "$value": "18px",
+      "$type": "dimension",
+      "$description": "Spacing 18px"
+    },
     "20": {
       "$value": "20px",
       "$type": "dimension",
@@ -191,91 +271,81 @@
       "$type": "dimension",
       "$description": "Spacing 24px"
     },
-    "32": {
-      "$value": "32px",
+    "28": {
+      "$value": "28px",
       "$type": "dimension",
-      "$description": "Spacing 32px"
+      "$description": "Spacing 28px"
     },
-    "80": {
-      "$value": "80px",
+    "34": {
+      "$value": "34px",
       "$type": "dimension",
-      "$description": "Spacing 80px"
+      "$description": "Spacing 34px"
+    },
+    "44": {
+      "$value": "44px",
+      "$type": "dimension",
+      "$description": "Spacing 44px"
+    },
+    "50": {
+      "$value": "50px",
+      "$type": "dimension",
+      "$description": "Spacing 50px"
     },
     "100": {
       "$value": "100px",
       "$type": "dimension",
       "$description": "Spacing 100px"
-    },
-    "148": {
-      "$value": "148px",
-      "$type": "dimension",
-      "$description": "Spacing 148px"
-    },
-    "200": {
-      "$value": "200px",
-      "$type": "dimension",
-      "$description": "Spacing 200px"
-    },
-    "240": {
-      "$value": "240px",
-      "$type": "dimension",
-      "$description": "Spacing 240px"
-    },
-    "unit": {
-      "$value": "4px",
-      "$type": "dimension",
-      "$description": "Base spacing unit"
     }
   },
   "radius": {
-    "lg": {
-      "$value": "8px",
+    "md": {
+      "$value": "6px",
       "$type": "dimension",
-      "$description": "Border radius lg"
+      "$description": "Border radius md"
     },
     "2xl": {
-      "$value": "16px",
+      "$value": "20px",
       "$type": "dimension",
       "$description": "Border radius 2xl"
     },
-    "3xl": {
-      "$value": "24px",
+    "full": {
+      "$value": "50px",
       "$type": "dimension",
-      "$description": "Border radius 3xl"
+      "$description": "Border radius full"
     },
-    "3xl-2": {
-      "$value": "40.798px",
+    "full-2": {
+      "$value": "100px",
       "$type": "dimension",
-      "$description": "Border radius 3xl-2"
+      "$description": "Border radius full-2"
+    },
+    "full-3": {
+      "$value": "188px",
+      "$type": "dimension",
+      "$description": "Border radius full-3"
     }
   },
   "surface": {
-    "void": {
+    "void-canvas": {
       "$value": "#000000",
       "$type": "color",
-      "$description": "Surface level 0: Page canvas — the deepest background layer"
+      "$description": "Surface level 0: Page background, behind everything"
     },
-    "carbon": {
-      "$value": "#0d0d0f",
+    "carbon-surface": {
+      "$value": "#1c1c1c",
       "$type": "color",
-      "$description": "Surface level 1: Card surface — elevated content blocks and portfolio cells"
+      "$description": "Surface level 1: Hero wash, elevated section backgrounds, card fills"
     },
-    "graphite": {
-      "$value": "#232529",
+    "periwinkle-wash": {
+      "$value": "#7089ba",
       "$type": "color",
-      "$description": "Surface level 2: Body background and footer border region — mid-layer"
-    },
-    "slate": {
-      "$value": "#2b2f33",
-      "$type": "color",
-      "$description": "Surface level 3: Most common card and panel surface — default elevation level"
+      "$description": "Surface level 2: Decorative highlight zones — feature illustration backgrounds, data-node fills"
     }
   },
   "$extensions": {
     "com.refero.extraction": {
-      "url": "https://atlantic.vc",
-      "siteName": "Atlantic.vc",
-      "extractedAt": "2026-06-03T18:06:02.805Z",
+      "url": "https://index.app",
+      "siteName": "Index",
+      "extractedAt": "2026-06-03T18:42:56.947Z",
       "variant": "extended"
     }
   }

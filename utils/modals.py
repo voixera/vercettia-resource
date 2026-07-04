@@ -14,6 +14,59 @@ from utils.tickets import create_private_ticket_channel, staff_mention
 from utils.translate import TranslatableView
 
 
+QRIS_KEYS = {
+    "payment_number",
+    "qris",
+    "qr_string",
+    "qr_code",
+    "qr_content",
+    "qris_string",
+    "qris_content",
+    "qris_payload",
+}
+TOTAL_KEYS = {"total_payment", "total", "amount", "gross_amount"}
+EXPIRED_KEYS = {"expired_at", "expires_at", "expired", "expiry_time"}
+
+
+def _find_nested_value(data: Any, keys: set[str]) -> Any | None:
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if str(key).casefold() in keys and value not in (None, ""):
+                return value
+        for value in data.values():
+            found = _find_nested_value(value, keys)
+            if found not in (None, ""):
+                return found
+    elif isinstance(data, list):
+        for item in data:
+            found = _find_nested_value(item, keys)
+            if found not in (None, ""):
+                return found
+    return None
+
+
+def _as_int(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    text = str(value).strip().replace("Rp", "").replace("IDR", "").replace(" ", "")
+    try:
+        if "," in text and "." in text:
+            text = text.replace(".", "").replace(",", ".")
+        elif "," in text:
+            head, tail = text.rsplit(",", 1)
+            text = f"{head}.{tail}" if len(tail) <= 2 else text.replace(",", "")
+        elif "." in text:
+            head, tail = text.rsplit(".", 1)
+            text = text.replace(".", "") if len(tail) == 3 else f"{head}.{tail}"
+        return int(float(text))
+    except ValueError:
+        return None
+
+
 class BuyModal(discord.ui.Modal):
     def __init__(self, product: dict[str, Any]) -> None:
         super().__init__(title=f"Checkout Ticket - {product['name']}")
@@ -95,19 +148,24 @@ class BuyModal(discord.ui.Modal):
             try:
                 payment_url = gateway.build_payment_url(order["invoice"], total)
                 if gateway.is_ready_for_status_check and gateway.default_method == "qris":
-                    payment_data = await gateway.create_transaction(order["invoice"], total, method="qris")
-                    payment = payment_data.get("payment") or {}
-                    qris_text = payment.get("payment_number")
-                    pakasir_total = payment.get("total_payment")
-                    pakasir_expired = payment.get("expired_at")
+                    try:
+                        payment_data = await gateway.create_transaction(order["invoice"], total, method="qris")
+                        qris_value = _find_nested_value(payment_data, QRIS_KEYS)
+                        total_value = _find_nested_value(payment_data, TOTAL_KEYS)
+                        expired_value = _find_nested_value(payment_data, EXPIRED_KEYS)
+                        qris_text = str(qris_value) if qris_value else None
+                        pakasir_total = _as_int(total_value)
+                        pakasir_expired = str(expired_value) if expired_value else None
+                    except Exception:
+                        logging.exception("Failed to create Pakasir QRIS transaction for %s.", order["invoice"])
                 await bot.db.update_order_payment(
                     order["invoice"],
                     provider="pakasir",
-                    method="qris" if qris_text else "checkout_url",
+                    method="qris" if qris_text else "checkout_qr",
                     payment_url=payment_url,
                 )
                 order["payment_provider"] = "pakasir"
-                order["payment_method"] = "qris" if qris_text else "checkout_url"
+                order["payment_method"] = "qris" if qris_text else "checkout_qr"
                 order["payment_url"] = payment_url
             except PakasirConfigError:
                 payment_url = None
@@ -144,8 +202,9 @@ class BuyModal(discord.ui.Modal):
         )
         mention = staff_mention(guild, settings)
         qris_files: list[discord.File] = []
-        if qris_text:
-            qris_files.append(make_qris_file(qris_text, order["invoice"]))
+        qris_payload = qris_text or payment_url
+        if qris_payload:
+            qris_files.append(make_qris_file(qris_payload, order["invoice"]))
 
         await channel.send(
             f"{interaction.user.mention} {mention}\n"
