@@ -26,6 +26,15 @@ QRIS_KEYS = {
 }
 TOTAL_KEYS = {"total_payment", "total", "amount", "gross_amount"}
 EXPIRED_KEYS = {"expired_at", "expires_at", "expired", "expiry_time"}
+MODAL_TITLE_LIMIT = 45
+
+
+def _modal_title(product_name: str) -> str:
+    title = f"Checkout - {product_name}"
+    if len(title) <= MODAL_TITLE_LIMIT:
+        return title
+    suffix = "..."
+    return title[: MODAL_TITLE_LIMIT - len(suffix)].rstrip() + suffix
 
 
 def _find_nested_value(data: Any, keys: set[str]) -> Any | None:
@@ -69,7 +78,7 @@ def _as_int(value: Any) -> int | None:
 
 class BuyModal(discord.ui.Modal):
     def __init__(self, product: dict[str, Any]) -> None:
-        super().__init__(title=f"Checkout Ticket - {product['name']}")
+        super().__init__(title=_modal_title(str(product["name"])))
         self.product = product
         self.quantity = discord.ui.TextInput(
             label="Quantity",
