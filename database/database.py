@@ -74,8 +74,10 @@ class Database:
             "payment_provider": "ALTER TABLE orders ADD COLUMN payment_provider TEXT DEFAULT ''",
             "payment_method": "ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT ''",
             "payment_url": "ALTER TABLE orders ADD COLUMN payment_url TEXT DEFAULT ''",
+            "ticket_channel_id": "ALTER TABLE orders ADD COLUMN ticket_channel_id TEXT DEFAULT ''",
             "paid_at": "ALTER TABLE orders ADD COLUMN paid_at TEXT DEFAULT ''",
             "delivered_at": "ALTER TABLE orders ADD COLUMN delivered_at TEXT DEFAULT ''",
+            "payment_notice_sent_at": "ALTER TABLE orders ADD COLUMN payment_notice_sent_at TEXT DEFAULT ''",
         }
         for column, statement in migrations.items():
             if column not in columns:
@@ -206,6 +208,20 @@ class Database:
         )
         return await cursor.fetchall()
 
+    async def list_paid_orders_without_notice(self, limit: int = 25) -> list[aiosqlite.Row]:
+        cursor = await self._db.execute(
+            """
+            SELECT * FROM orders
+            WHERE status = ?
+              AND COALESCE(payment_notice_sent_at, '') = ''
+              AND COALESCE(ticket_channel_id, '') != ''
+            ORDER BY id ASC
+            LIMIT ?
+            """,
+            ("Paid", limit),
+        )
+        return await cursor.fetchall()
+
     async def get_order(self, invoice: str) -> aiosqlite.Row | None:
         cursor = await self._db.execute(
             "SELECT * FROM orders WHERE lower(invoice) = lower(?)",
@@ -237,6 +253,17 @@ class Database:
         )
         await self._db.commit()
 
+    async def set_order_ticket_channel(self, invoice: str, channel_id: int) -> None:
+        await self._db.execute(
+            """
+            UPDATE orders
+            SET ticket_channel_id = ?
+            WHERE lower(invoice) = lower(?)
+            """,
+            (str(channel_id), invoice),
+        )
+        await self._db.commit()
+
     async def mark_order_paid(self, invoice: str, paid_at: str, payment_method: str) -> None:
         await self._db.execute(
             """
@@ -245,6 +272,18 @@ class Database:
             WHERE lower(invoice) = lower(?)
             """,
             ("Paid", paid_at, payment_method, invoice),
+        )
+        await self._db.commit()
+
+    async def mark_payment_notice_sent(self, invoice: str) -> None:
+        sent_at = datetime.now(UTC).isoformat()
+        await self._db.execute(
+            """
+            UPDATE orders
+            SET payment_notice_sent_at = ?
+            WHERE lower(invoice) = lower(?)
+            """,
+            (sent_at, invoice),
         )
         await self._db.commit()
 

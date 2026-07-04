@@ -199,6 +199,9 @@ class BuyModal(discord.ui.Modal):
             prefix="order",
             reason=f"Vercettia Store checkout {order['invoice']}",
         )
+        await bot.db.set_order_ticket_channel(order["invoice"], channel.id)
+        order["ticket_channel_id"] = str(channel.id)
+
         mention = staff_mention(guild, settings)
         qris_files: list[discord.File] = []
         qris_payload = qris_text or payment_url

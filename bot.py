@@ -12,9 +12,13 @@ from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 from database.database import Database
+from utils.embeds import compact_datetime, money
 from utils.logger import setup_logging
+from utils.messages import panel
 from utils.oauth import OAuthVerificationServer
 from utils.pakasir import PakasirGateway
+from utils.tickets import staff_mention
+from utils.translate import StaticPanelView
 from utils.views import LegacyVerifyMemberView, TicketPanelView, VerifyPanelView
 
 
@@ -188,12 +192,22 @@ class VercettiaBot(commands.Bot):
                         str(transaction.get("completed_at", "")),
                         str(transaction.get("payment_method", order["payment_method"] or "qris")),
                     )
+                    paid_order = await self.db.get_order(order["invoice"])
+                    if paid_order:
+                        await self._send_payment_confirmed_notice(paid_order, transaction)
                     logging.info(
                         "Payment confirmed for %s. Manual delivery will be handled in the ticket.",
                         order["invoice"],
                     )
                 except Exception:
                     logging.exception("Failed to process fulfillment for %s.", order["invoice"])
+
+            paid_orders = await self.db.list_paid_orders_without_notice(limit=25)
+            for order in paid_orders:
+                try:
+                    await self._send_payment_confirmed_notice(order, {})
+                except Exception:
+                    logging.exception("Failed to send payment notice for %s.", order["invoice"])
         except Exception:
             logging.exception("Fulfillment worker failed.")
         finally:
@@ -202,6 +216,63 @@ class VercettiaBot(commands.Bot):
     @fulfillment_worker.before_loop
     async def before_fulfillment_worker(self) -> None:
         await self.wait_until_ready()
+
+    async def _send_payment_confirmed_notice(self, order: Any, transaction: dict[str, Any]) -> None:
+        if "payment_notice_sent_at" in order.keys() and order["payment_notice_sent_at"]:
+            return
+
+        channel_id = int(order["ticket_channel_id"] or 0)
+        if not channel_id:
+            logging.warning("Payment confirmed for %s, but ticket channel is not stored.", order["invoice"])
+            return
+
+        channel = self.get_channel(channel_id)
+        if channel is None:
+            try:
+                channel = await self.fetch_channel(channel_id)
+            except discord.HTTPException:
+                logging.exception("Ticket channel %s for %s could not be fetched.", channel_id, order["invoice"])
+                return
+
+        if not isinstance(channel, discord.TextChannel):
+            logging.warning("Ticket channel %s for %s is not a text channel.", channel_id, order["invoice"])
+            return
+
+        payment_method = str(transaction.get("payment_method", order["payment_method"] or "QRIS")).upper()
+        paid_at = str(transaction.get("completed_at", order["paid_at"] or ""))
+        status_text = "Paid"
+        delivery_note = (
+            "Mohon tunggu sebentar. Admin sedang menyiapkan data akun premium "
+            "dan akan mengirimkannya langsung di ticket ini."
+        )
+        content = panel(
+            "Payment Received",
+            (
+                "Order Data",
+                [
+                    ("Invoice", order["invoice"]),
+                    ("Product", order["product"]),
+                    ("Total", money(int(order["total"]), self.settings)),
+                    ("Status", status_text),
+                ],
+            ),
+            (
+                "Payment",
+                [
+                    ("Method", payment_method),
+                    ("Created At", compact_datetime(paid_at) if paid_at else "-"),
+                    ("Delivery", delivery_note),
+                ],
+            ),
+            intro="Pembayaran QRIS berhasil dikonfirmasi. Terima kasih sudah menyelesaikan pembayaran.",
+        )
+        mention = staff_mention(channel.guild, self.settings)
+        await channel.send(
+            f"<@{int(order['user_id'])}> {mention}".strip(),
+            view=StaticPanelView(content, accent_color=0x22C55E),
+            allowed_mentions=discord.AllowedMentions(users=True, roles=True, everyone=False),
+        )
+        await self.db.mark_payment_notice_sent(order["invoice"])
 
     @staticmethod
     def _load_json(path: Path, *, required: bool = True) -> dict[str, Any]:
