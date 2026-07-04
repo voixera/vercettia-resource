@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
 import discord
@@ -56,7 +57,7 @@ class BuyView(TranslatableView):
     def __init__(self, product: dict[str, Any], settings: dict[str, Any]) -> None:
         self.product = product
         self.settings = settings
-        super().__init__(lambda language: product_message(settings, product, language), timeout=300)
+        super().__init__(lambda language: product_message(settings, product, language), timeout=1800)
 
     def extra_items(self) -> list[discord.ui.Item]:
         is_available = is_product_orderable(self.product)
@@ -74,7 +75,24 @@ class BuyView(TranslatableView):
         return [button, refresh_button]
 
     async def buy(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_modal(BuyModal(self.product))
+        if not is_product_orderable(self.product):
+            await interaction.response.send_message(
+                "Produk ini sedang tidak bisa diorder.",
+                ephemeral=True,
+            )
+            return
+
+        try:
+            await interaction.response.send_modal(BuyModal(self.product))
+        except discord.NotFound:
+            logging.warning("Buy Now interaction expired before modal could be opened.")
+        except discord.HTTPException:
+            logging.exception("Failed to open checkout modal.")
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    "Checkout belum bisa dibuka. Jalankan /product ulang lalu klik Buy Now lagi.",
+                    ephemeral=True,
+                )
 
     async def refresh_stock(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
@@ -176,7 +194,7 @@ class StoreView(TranslatableView):
         self.grouped = self._group_products()
         super().__init__(
             lambda language: catalog_message(settings, categories, products, language),
-            timeout=300,
+            timeout=1800,
         )
 
     def build_content(self, language: str = "id") -> str:

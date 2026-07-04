@@ -67,7 +67,7 @@ class PakasirGateway:
             async with session.post(
                 f"{self.base_url}/api/transactioncreate/{payment_method}",
                 json=payload,
-                timeout=aiohttp.ClientTimeout(total=20),
+                timeout=aiohttp.ClientTimeout(total=8),
             ) as response:
                 response.raise_for_status()
                 return await response.json()

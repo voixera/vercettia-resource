@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 
 from discord.ext import commands
@@ -20,6 +21,21 @@ async def refresh_supplier_products(
     *,
     add_new_products: bool = True,
     save: bool = True,
+) -> SupplierSyncResult:
+    lock = getattr(bot, "_supplier_sync_lock", None)
+    if lock is None:
+        lock = asyncio.Lock()
+        setattr(bot, "_supplier_sync_lock", lock)
+
+    async with lock:
+        return await _refresh_supplier_products(bot, add_new_products=add_new_products, save=save)
+
+
+async def _refresh_supplier_products(
+    bot: commands.Bot,
+    *,
+    add_new_products: bool,
+    save: bool,
 ) -> SupplierSyncResult:
     result = SupplierSyncResult()
     client = TelegramSupplierStockClient(bot.supplier_config, bot.base_dir)

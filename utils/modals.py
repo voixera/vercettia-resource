@@ -88,6 +88,24 @@ class BuyModal(discord.ui.Modal):
         self.add_item(self.quantity)
         self.add_item(self.note)
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        logging.error(
+            "Checkout modal failed for %s.",
+            self.product.get("name"),
+            exc_info=(type(error), error, error.__traceback__),
+        )
+        message = (
+            "Checkout gagal dibuat. Coba jalankan /product ulang lalu klik Buy Now lagi. "
+            "Jika masih gagal, hubungi admin untuk cek permission ticket dan konfigurasi pembayaran."
+        )
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(message, ephemeral=True)
+            else:
+                await interaction.response.send_message(message, ephemeral=True)
+        except discord.HTTPException:
+            logging.exception("Failed to send checkout error response.")
+
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
         bot = interaction.client
