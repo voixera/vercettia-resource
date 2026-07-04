@@ -159,8 +159,10 @@ class Database:
             cursor = await self._db.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM orders")
             row = await cursor.fetchone()
             next_id = int(row["next_id"])
-            invoice = f"{invoice_prefix}-{next_id:06d}"
-            date = datetime.now(UTC).isoformat()
+            now = datetime.now(UTC)
+            date = now.isoformat()
+            timestamp = now.strftime("%Y%m%d%H%M%S")
+            invoice = f"{invoice_prefix}-{timestamp}-{next_id:06d}"
 
             await self._db.execute(
                 """

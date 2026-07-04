@@ -38,7 +38,8 @@ class Payment(commands.Cog):
         gateway = PakasirGateway(self.bot.payment_config)
         test_url = "-"
         if gateway.is_ready_for_checkout:
-            test_url = gateway.build_payment_url("VERCETTIA-CHECK", 1000)
+            timestamp = discord.utils.utcnow().strftime("%Y%m%d%H%M%S")
+            test_url = gateway.build_payment_url(f"VERCETTIA-CHECK-{timestamp}", 1000)
 
         content = panel(
             "Pakasir Runtime Status",
