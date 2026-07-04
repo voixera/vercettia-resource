@@ -138,6 +138,48 @@ class TicketPanelView(PanelView):
         await interaction.followup.send(f"Help ticket dibuat: {channel.mention}", ephemeral=True)
 
 
+def _rules_channel_reference(guild: discord.Guild, settings: dict[str, Any]) -> tuple[str, str | None]:
+    channel_id = int(settings.get("rules_channel_id", 0))
+    channel = guild.get_channel(channel_id) if channel_id else None
+    if isinstance(channel, discord.TextChannel):
+        return channel.mention, f"https://discord.com/channels/{guild.id}/{channel.id}"
+    return "channel rules server", None
+
+
+async def _grant_member_role(interaction: discord.Interaction) -> tuple[bool, str]:
+    if interaction.guild is None or not isinstance(interaction.user, discord.Member):
+        return False, "Verify hanya bisa digunakan di server."
+
+    settings = getattr(interaction.client, "settings", {})
+    role_id = int(settings.get("member_role_id", 0))
+    role = interaction.guild.get_role(role_id) if role_id else None
+    if role is None:
+        return False, "Role member belum diset. Minta admin menjalankan /verify_panel terlebih dahulu."
+
+    if role in interaction.user.roles:
+        return True, f"Akun kamu sudah terverifikasi dengan role {role.mention}."
+
+    try:
+        await interaction.user.add_roles(role, reason="Vercettia member verification")
+    except discord.Forbidden:
+        return False, "Bot belum punya izin untuk memberi role ini. Naikkan role bot di atas role member."
+
+    return True, f"Verifikasi berhasil. Role {role.mention} sudah ditambahkan."
+
+
+async def _send_rules_step(interaction: discord.Interaction) -> None:
+    if interaction.guild is None:
+        await interaction.response.send_message("Verify hanya bisa digunakan di server.", ephemeral=True)
+        return
+
+    settings = getattr(interaction.client, "settings", {})
+    rules_reference, rules_url = _rules_channel_reference(interaction.guild, settings)
+    await interaction.response.send_message(
+        view=RulesReadView(interaction.user.id, rules_reference, rules_url),
+        ephemeral=True,
+    )
+
+
 class VerifyPanelView(discord.ui.LayoutView):
     def __init__(self) -> None:
         super().__init__(timeout=None)
@@ -149,7 +191,111 @@ class VerifyPanelView(discord.ui.LayoutView):
         container.add_item(discord.ui.Separator())
         container.add_item(
             discord.ui.TextDisplay(
-                "Klik tombol di bawah untuk mendapatkan role member dan membuka akses server."
+                "Sebelum mendapatkan role member, baca rules server terlebih dahulu. "
+                "Setelah itu lanjutkan verifikasi untuk membuka akses server."
+            )
+        )
+        container.add_item(discord.ui.Separator())
+        container.add_item(
+            discord.ui.TextDisplay(
+                "**Alur Join:**\n"
+                "- Baca rules server\n"
+                "- Konfirmasi sudah membaca rules\n"
+                "- Verify member\n"
+                "- Role member otomatis diberikan"
+            )
+        )
+        self.add_item(container)
+
+        button = discord.ui.Button(
+            label="Baca Rules",
+            style=discord.ButtonStyle.primary,
+            custom_id="vercettia_read_rules",
+        )
+        button.callback = self.read_rules
+
+        actions = discord.ui.Container()
+        actions.add_item(discord.ui.ActionRow(button))
+        self.add_item(actions)
+
+    async def read_rules(self, interaction: discord.Interaction) -> None:
+        await _send_rules_step(interaction)
+
+
+class LegacyVerifyMemberView(discord.ui.View):
+    def __init__(self) -> None:
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="Verify Member",
+        style=discord.ButtonStyle.primary,
+        custom_id="vercettia_verify_member",
+    )
+    async def legacy_verify(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:
+        await _send_rules_step(interaction)
+
+
+class RulesReadView(discord.ui.LayoutView):
+    def __init__(self, user_id: int, rules_reference: str, rules_url: str | None) -> None:
+        super().__init__(timeout=300)
+        self.user_id = user_id
+        self.rules_reference = rules_reference
+        self.rules_url = rules_url
+        self.render()
+
+    def render(self) -> None:
+        container = discord.ui.Container(accent_color=0x8B5CF6)
+        container.add_item(discord.ui.TextDisplay("**Baca Rules Terlebih Dahulu**"))
+        container.add_item(discord.ui.Separator())
+        container.add_item(
+            discord.ui.TextDisplay(
+                f"Buka dan baca rules di {self.rules_reference}. "
+                "Pastikan kamu paham aturan server sebelum lanjut verify member."
+            )
+        )
+        self.add_item(container)
+
+        confirm_button = discord.ui.Button(
+            label="Saya Sudah Baca Rules",
+            style=discord.ButtonStyle.primary,
+        )
+        confirm_button.callback = self.confirm_rules
+
+        row_items: list[discord.ui.Item] = []
+        if self.rules_url:
+            row_items.append(
+                discord.ui.Button(
+                    label="Open Rules",
+                    style=discord.ButtonStyle.link,
+                    url=self.rules_url,
+                )
+            )
+        row_items.append(confirm_button)
+
+        actions = discord.ui.Container()
+        actions.add_item(discord.ui.ActionRow(*row_items))
+        self.add_item(actions)
+
+    async def confirm_rules(self, interaction: discord.Interaction) -> None:
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("Flow verify ini hanya untuk akun yang membuka panel.", ephemeral=True)
+            return
+        await interaction.response.edit_message(view=RulesVerifyView(self.user_id))
+
+
+class RulesVerifyView(discord.ui.LayoutView):
+    def __init__(self, user_id: int) -> None:
+        super().__init__(timeout=300)
+        self.user_id = user_id
+        self.render()
+
+    def render(self) -> None:
+        container = discord.ui.Container(accent_color=0x8B5CF6)
+        container.add_item(discord.ui.TextDisplay("**Verify Member**"))
+        container.add_item(discord.ui.Separator())
+        container.add_item(
+            discord.ui.TextDisplay(
+                "Rules sudah dikonfirmasi. Klik tombol verify untuk mendapatkan role member."
             )
         )
         self.add_item(container)
@@ -157,7 +303,6 @@ class VerifyPanelView(discord.ui.LayoutView):
         button = discord.ui.Button(
             label="Verify Member",
             style=discord.ButtonStyle.primary,
-            custom_id="vercettia_verify_member",
         )
         button.callback = self.verify
 
@@ -166,37 +311,22 @@ class VerifyPanelView(discord.ui.LayoutView):
         self.add_item(actions)
 
     async def verify(self, interaction: discord.Interaction) -> None:
-        if interaction.guild is None or not isinstance(interaction.user, discord.Member):
-            await interaction.response.send_message("Verify hanya bisa digunakan di server.", ephemeral=True)
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("Flow verify ini hanya untuk akun yang membuka panel.", ephemeral=True)
             return
 
-        settings = getattr(interaction.client, "settings", {})
-        role_id = int(settings.get("member_role_id", 0))
-        role = interaction.guild.get_role(role_id) if role_id else None
-        if role is None:
-            await interaction.response.send_message(
-                "Role member belum diset. Minta admin menjalankan /verify_panel terlebih dahulu.",
-                ephemeral=True,
-            )
-            return
+        success, message = await _grant_member_role(interaction)
+        await interaction.response.edit_message(view=VerificationResultView(success, message))
 
-        if role in interaction.user.roles:
-            await interaction.response.send_message("Akun kamu sudah terverifikasi.", ephemeral=True)
-            return
 
-        try:
-            await interaction.user.add_roles(role, reason="Vercettia member verification")
-        except discord.Forbidden:
-            await interaction.response.send_message(
-                "Bot belum punya izin untuk memberi role ini. Naikkan role bot di atas role member.",
-                ephemeral=True,
-            )
-            return
-
-        await interaction.response.send_message(
-            f"Verifikasi berhasil. Role {role.mention} sudah ditambahkan.",
-            ephemeral=True,
-        )
+class VerificationResultView(discord.ui.LayoutView):
+    def __init__(self, success: bool, message: str) -> None:
+        super().__init__(timeout=300)
+        container = discord.ui.Container(accent_color=0x22C55E if success else 0xEF4444)
+        container.add_item(discord.ui.TextDisplay("**Verification Complete**" if success else "**Verification Failed**"))
+        container.add_item(discord.ui.Separator())
+        container.add_item(discord.ui.TextDisplay(message))
+        self.add_item(container)
 
 
 class CloseTicketModal(discord.ui.Modal):

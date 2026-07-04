@@ -50,6 +50,7 @@ class Community(commands.Cog):
         interaction: discord.Interaction,
         role: discord.Role,
         channel: discord.TextChannel | None = None,
+        rules_channel: discord.TextChannel | None = None,
     ) -> None:
         target_channel = channel or interaction.channel
         if not isinstance(target_channel, discord.TextChannel):
@@ -65,12 +66,23 @@ class Community(commands.Cog):
             return
 
         self.bot.settings["member_role_id"] = role.id
+        if rules_channel:
+            self.bot.settings["rules_channel_id"] = rules_channel.id
         await self.bot.save_settings_config()
         await target_channel.send(view=VerifyPanelView())
+        rules_text = f" Rules: {rules_channel.mention}." if rules_channel else ""
         await interaction.response.send_message(
-            f"Panel verify dikirim ke {target_channel.mention}. Role member: {role.mention}.",
+            f"Panel verify dikirim ke {target_channel.mention}. Role member: {role.mention}.{rules_text}",
             ephemeral=True,
         )
+
+    @app_commands.command(name="rules_setup", description="Set channel rules untuk flow verify.")
+    @app_commands.default_permissions(administrator=True)
+    @admin_only()
+    async def rules_setup(self, interaction: discord.Interaction, channel: discord.TextChannel) -> None:
+        self.bot.settings["rules_channel_id"] = channel.id
+        await self.bot.save_settings_config()
+        await interaction.response.send_message(f"Rules channel diset ke {channel.mention}.", ephemeral=True)
 
     @app_commands.command(name="give_role", description="Berikan role ke member.")
     @app_commands.default_permissions(administrator=True)

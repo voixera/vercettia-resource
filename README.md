@@ -1,17 +1,18 @@
 # Vercettia Store Discord Bot
 
-Vercettia Store adalah premium digital marketplace yang sedang dikembangkan menjadi ekosistem bot Discord dan web Laravel.
-
-Saat ini bot Discord tetap menjadi runtime utama yang stabil. Folder `web/` berisi fondasi Laravel 12 untuk API dan website premium, sedangkan `docs/` berisi arsitektur serta roadmap migrasi.
+Vercettia Store sekarang difokuskan sebagai Discord marketplace bot untuk produk digital premium. Runtime utama hanya bot Python, tanpa website.
 
 ## Struktur
 
-- `bot.py`, `cogs/`, `utils/`, `config/`: Discord bot produksi saat ini.
-- `web/`: Laravel 12 API dan Blade/Vite frontend starter.
-- `docs/`: arsitektur, roadmap, dan catatan sistem.
-- `database/`: SQLite bot saat ini dan area transisi database.
+- `bot.py`: entrypoint bot.
+- `cogs/`: slash commands dan fitur modular.
+- `utils/`: helper checkout, ticket, supplier sync, message UI, payment gateway, dan checks.
+- `config/`: konfigurasi produk, settings, payment, supplier, dan delivery.
+- `database/`: SQLite runtime bot.
+- `tools/`: helper login/export session supplier Telegram.
+- `assets/`: logo dan asset produk.
 
-## Setup
+## Setup Lokal
 
 ```bash
 pip install -r requirements.txt
@@ -24,7 +25,7 @@ DISCORD_TOKEN=your_token
 GUILD_ID=optional_test_guild_id
 ```
 
-## Jalankan
+Jalankan bot:
 
 ```bash
 python bot.py
@@ -32,14 +33,12 @@ python bot.py
 
 ## Deploy Railway
 
-Project sudah siap untuk Railway sebagai worker service.
-Build Railway dikunci ke Python lewat `nixpacks.toml`, jadi folder `web/` tidak akan dipilih sebagai app utama.
+Project siap berjalan sebagai Railway worker service.
 
 1. Push repository ke GitHub.
-2. Buat project baru di Railway dari repository GitHub.
-3. Tambahkan Volume Railway dan mount ke `/data`.
-4. Pastikan service type berjalan sebagai worker, bukan web server.
-5. Isi Variables:
+2. Buat project Railway dari repository GitHub.
+3. Tambahkan Railway Volume dan mount ke `/data`.
+4. Isi Variables:
 
 ```env
 DISCORD_TOKEN=token_bot_discord
@@ -60,6 +59,12 @@ TELEGRAM_API_HASH=api_hash_telegram
 TELEGRAM_SESSION_STRING=session_string_telegram
 ```
 
+Railway akan menjalankan:
+
+```bash
+python bot.py
+```
+
 Untuk mendapatkan `TELEGRAM_SESSION_STRING`, login Telegram lokal dulu lalu export:
 
 ```bash
@@ -69,19 +74,13 @@ python tools/export_telegram_session.py
 
 Copy output `export_telegram_session.py` ke variable Railway `TELEGRAM_SESSION_STRING`.
 
-Railway akan menjalankan:
-
-```bash
-python bot.py
-```
-
 ## Config
 
-- `config/products.json` untuk kategori dan produk.
-- `config/payment.json` untuk Pakasir/payment gateway.
-- `config/supplier.json` untuk sync stok reseller dari bot Telegram supplier.
-- `config/delivery.json` untuk interval monitoring pembayaran. Data akun premium tetap dikirim manual oleh admin di ticket.
-- `config/settings.json` untuk role, channel, whitelist admin, status bot, dan pesan.
+- `config/products.json`: kategori dan produk.
+- `config/settings.json`: role, channel, whitelist admin, status bot, dan pesan.
+- `config/delivery.json`: interval monitoring payment.
+- `config/payment.json`: Pakasir/payment gateway, tidak di-commit.
+- `config/supplier.json`: supplier Telegram, tidak di-commit.
 
 ## Commands
 
@@ -96,15 +95,31 @@ python bot.py
 - `/setprice`, `/setstock`, `/setstatus`
 - `/syncsupplierstock`
 - `/orders`, `/statistic`, `/reload`, `/backup`
-- `/welcome_setup`, `/leave_setup`, `/verify_panel`
+- `/welcome_setup`, `/leave_setup`, `/rules_setup`, `/verify_panel`
 - `/gift_role`, `/give_role`, `/remove_role`
 - `/join_voice`, `/leave_voice`
+
+## Join Flow
+
+Alur member baru:
+
+1. Baca rules server.
+2. Konfirmasi sudah membaca rules.
+3. Verify member.
+4. Bot otomatis memberi role member.
+
+Setup:
+
+```text
+/rules_setup channel:#rules
+/verify_panel role:@Member channel:#verify rules_channel:#rules
+```
 
 ## Supplier Telegram
 
 Bot bisa sync stok dari supplier Telegram melalui session akun Telegram reseller.
 
-1. Isi `api_id` dan `api_hash` di `config/supplier.json`.
+1. Isi `api_id` dan `api_hash` di `config/supplier.json` atau Railway Variables.
 2. Pastikan `bot_username` berisi `MeowtensOrder_bot`.
 3. Ubah `stock_command` sesuai command stok di bot supplier.
 4. Sesuaikan `product_map` jika nama produk supplier berbeda.
@@ -122,11 +137,7 @@ File sensitif tetap di-ignore:
 
 - `.env`
 - `config/payment.json`
+- `config/supplier.json`
 - `database/database.db`
 - `logs/`
-
-## Web Laravel
-
-Lihat [web/README.md](web/README.md) untuk setup Laravel, API, Vite, dan arah migrasi bot ke API.
-
-Dokumentasi arsitektur tersedia di [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- `*.session`

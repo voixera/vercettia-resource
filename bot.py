@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from database.database import Database
 from utils.logger import setup_logging
 from utils.pakasir import PakasirGateway
-from utils.views import TicketPanelView, VerifyPanelView
+from utils.views import LegacyVerifyMemberView, TicketPanelView, VerifyPanelView
 
 
 BASE_DIR = Path(__file__).parent
@@ -54,6 +54,7 @@ class VercettiaBot(commands.Bot):
 
         self.add_view(TicketPanelView())
         self.add_view(VerifyPanelView())
+        self.add_view(LegacyVerifyMemberView())
 
         self.fulfillment_worker.change_interval(
             seconds=int(self.delivery_config.get("poll_interval_seconds", 45))

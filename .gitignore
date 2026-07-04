@@ -16,13 +16,3 @@ __pycache__/
 .venv/
 venv/
 .tools/
-web/.env
-web/vendor/
-web/node_modules/
-web/public/build/
-web/database/database.sqlite
-web/bootstrap/cache/*.php
-web/storage/logs/*.log
-web/storage/framework/cache/data/*
-web/storage/framework/sessions/*
-web/storage/framework/views/*
