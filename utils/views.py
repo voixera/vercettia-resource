@@ -7,8 +7,40 @@ import discord
 
 from utils.messages import catalog_message, product_message, panel, sorted_products, ticket_panel_message
 from utils.modals import BuyModal
+from utils.supplier_sync import refresh_supplier_products
 from utils.tickets import create_private_ticket_channel, staff_mention
 from utils.translate import PanelView, TranslatableView
+
+
+async def _refresh_supplier_from_interaction(interaction: discord.Interaction) -> tuple[bool, str]:
+    bot = interaction.client
+    supplier_config = getattr(bot, "supplier_config", {})
+    if not supplier_config.get("enabled", False):
+        return False, "Sync stok supplier belum aktif."
+
+    before = {
+        "categories": getattr(bot, "products_config", {}).get("categories", {}),
+        "products": getattr(bot, "products_config", {}).get("products", []),
+    }
+    before_snapshot = repr(before)
+    result = await refresh_supplier_products(bot, add_new_products=True, save=True)
+    if result.error:
+        return False, f"Refresh stok gagal: {result.error}"
+
+    after = {
+        "categories": getattr(bot, "products_config", {}).get("categories", {}),
+        "products": getattr(bot, "products_config", {}).get("products", []),
+    }
+    changed = bool(result.updated or result.added) or before_snapshot != repr(after)
+    if not changed:
+        return False, "Stok sudah terbaru."
+
+    summary_parts = []
+    if result.updated:
+        summary_parts.append(f"{len(result.updated)} stok berubah")
+    if result.added:
+        summary_parts.append(f"{len(result.added)} produk baru")
+    return True, ", ".join(summary_parts) or "Data produk diperbarui"
 
 
 class BuyView(TranslatableView):
@@ -29,10 +61,39 @@ class BuyView(TranslatableView):
             disabled=not is_available,
         )
         button.callback = self.buy
-        return [button]
+        refresh_button = discord.ui.Button(
+            label="Refresh Stock",
+            style=discord.ButtonStyle.secondary,
+        )
+        refresh_button.callback = self.refresh_stock
+        return [button, refresh_button]
 
     async def buy(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(BuyModal(self.product))
+
+    async def refresh_stock(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        changed, message = await _refresh_supplier_from_interaction(interaction)
+        if not changed:
+            await interaction.followup.send(message, ephemeral=True)
+            return
+
+        products = getattr(interaction.client, "products_config", {}).get("products", [])
+        product = next(
+            (
+                item
+                for item in products
+                if str(item.get("name", "")).casefold() == str(self.product.get("name", "")).casefold()
+            ),
+            self.product,
+        )
+        self.product = product
+        settings = getattr(interaction.client, "settings", self.settings)
+        try:
+            await interaction.message.edit(view=BuyView(product, settings))
+        except (AttributeError, discord.HTTPException):
+            pass
+        await interaction.followup.send(f"Stock refreshed: {message}.", ephemeral=True)
 
 
 
@@ -85,13 +146,34 @@ class StoreView(TranslatableView):
         return catalog_message(self.settings, self.categories, self.products, language)
 
     def extra_items(self) -> list[discord.ui.Item]:
-        return [ProductSelect(self.products, self.settings)]
+        refresh_button = discord.ui.Button(
+            label="Refresh Stock",
+            style=discord.ButtonStyle.secondary,
+        )
+        refresh_button.callback = self.refresh_stock
+        return [ProductSelect(self.products, self.settings), refresh_button]
 
     def _group_products(self) -> dict[str, list[dict[str, Any]]]:
         grouped: dict[str, list[dict[str, Any]]] = {}
         for product in self.products:
             grouped.setdefault(product.get("category", "products"), []).append(product)
         return grouped
+
+    async def refresh_stock(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        changed, message = await _refresh_supplier_from_interaction(interaction)
+        if not changed:
+            await interaction.followup.send(message, ephemeral=True)
+            return
+
+        settings = getattr(interaction.client, "settings", self.settings)
+        products = getattr(interaction.client, "products_config", {}).get("products", [])
+        categories = getattr(interaction.client, "products_config", {}).get("categories", {})
+        try:
+            await interaction.message.edit(view=StoreView(settings, categories, products))
+        except (AttributeError, discord.HTTPException):
+            pass
+        await interaction.followup.send(f"Product list refreshed: {message}.", ephemeral=True)
 
 
 class TicketPanelView(PanelView):
