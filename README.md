@@ -112,7 +112,7 @@ Copy output `export_telegram_session.py` ke variable Railway `TELEGRAM_SESSION_S
 
 - `/store`
 - `/product`
-- `/payment`
+- `/payment`, `/pakasir_status`
 - `/ticket`
 - `/promo`
 - `/voucher create`, `/voucher redeem`, `/voucher delete`

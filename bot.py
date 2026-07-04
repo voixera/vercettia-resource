@@ -16,7 +16,7 @@ from utils.embeds import compact_datetime, money
 from utils.logger import setup_logging
 from utils.messages import panel
 from utils.oauth import OAuthVerificationServer
-from utils.pakasir import PakasirGateway
+from utils.pakasir import PakasirGateway, PakasirTransactionNotFound
 from utils.tickets import staff_mention
 from utils.translate import StaticPanelView
 from utils.views import LegacyVerifyMemberView, TicketPanelView, VerifyPanelView
@@ -182,7 +182,15 @@ class VercettiaBot(commands.Bot):
                     if order["payment_provider"] != "pakasir":
                         continue
 
-                    detail = await gateway.transaction_detail(order["invoice"], int(order["total"]))
+                    try:
+                        detail = await gateway.transaction_detail(order["invoice"], int(order["total"]))
+                    except PakasirTransactionNotFound as exc:
+                        logging.warning(
+                            "Pakasir detail not found for %s: %s",
+                            order["invoice"],
+                            exc,
+                        )
+                        continue
                     transaction = detail.get("transaction") or {}
                     if transaction.get("status") != "completed":
                         continue

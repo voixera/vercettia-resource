@@ -10,6 +10,10 @@ class PakasirConfigError(RuntimeError):
     pass
 
 
+class PakasirTransactionNotFound(RuntimeError):
+    pass
+
+
 class PakasirGateway:
     def __init__(self, config: dict[str, Any]) -> None:
         gateway = config.get("payment_gateway", {})
@@ -53,6 +57,19 @@ class PakasirGateway:
 
         return f"{self.base_url}/pay/{self.project_slug}/{amount}?{urlencode(query)}"
 
+    def masked_api_key(self) -> str:
+        if not self.api_key:
+            return "-"
+        if len(self.api_key) <= 8:
+            return "****"
+        return f"{self.api_key[:4]}...{self.api_key[-4:]}"
+
+    def production_hint(self) -> str:
+        return (
+            "Jika halaman Pay Now masih menampilkan sandbox, project_slug ini masih terbaca sandbox di Pakasir "
+            "atau Railway masih memakai slug/API key lama. Bot tidak bisa mengubah mode sandbox lewat URL."
+        )
+
     async def create_transaction(self, order_id: str, amount: int, method: str | None = None) -> dict[str, Any]:
         if not self.is_ready_for_status_check:
             raise PakasirConfigError("Pakasir api_key belum dikonfigurasi.")
@@ -89,5 +106,9 @@ class PakasirGateway:
                 params=params,
                 timeout=aiohttp.ClientTimeout(total=20),
             ) as response:
+                if response.status == 404:
+                    raise PakasirTransactionNotFound(
+                        "Transaction detail tidak ditemukan. Cek project_slug, api_key, order_id, dan amount."
+                    )
                 response.raise_for_status()
                 return await response.json()
