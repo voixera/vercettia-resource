@@ -22,6 +22,12 @@
     "enabled": true,
     "interval_seconds": 60
   },
+  "verification_rules": [
+    "Wajib membaca dan mengikuti seluruh rules server.",
+    "Dilarang spam, scam, toxic, atau promosi tanpa izin.",
+    "Gunakan ticket untuk order, kendala payment, dan bantuan produk.",
+    "Semua transaksi wajib melalui channel dan payment resmi Vercettia Store."
+  ],
   "currency": "Rp",
   "invoice_prefix": "Vercettia",
   "products_per_page": 5,

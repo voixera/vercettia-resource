@@ -33,12 +33,13 @@ python bot.py
 
 ## Deploy Railway
 
-Project siap berjalan sebagai Railway worker service.
+Project siap berjalan di Railway sebagai bot service dengan public domain untuk OAuth verify.
 
 1. Push repository ke GitHub.
 2. Buat project Railway dari repository GitHub.
 3. Tambahkan Railway Volume dan mount ke `/data`.
-4. Isi Variables:
+4. Generate Railway public domain, lalu pakai domain itu untuk `PUBLIC_BASE_URL`.
+5. Isi Variables:
 
 ```env
 DISCORD_TOKEN=token_bot_discord
@@ -47,6 +48,11 @@ DATABASE_PATH=/data/database.db
 DISCORD_MEMBERS_INTENT=true
 DISCORD_VOICE_STATES_INTENT=true
 DISCORD_SYNC_COMMANDS=false
+VERIFY_OAUTH_ENABLED=true
+DISCORD_CLIENT_ID=client_id_aplikasi_discord
+DISCORD_CLIENT_SECRET=client_secret_aplikasi_discord
+PUBLIC_BASE_URL=https://domain-railway-kamu.up.railway.app
+DISCORD_OAUTH_REDIRECT_URI=https://domain-railway-kamu.up.railway.app/verify/callback
 
 PAKASIR_ENABLED=true
 PAKASIR_PROJECT_SLUG=slug_project_pakasir
@@ -73,6 +79,14 @@ Di Discord Developer Portal, buka aplikasi bot lalu aktifkan:
 - Server Members Intent
 
 Intent ini wajib untuk welcome/leave dan verify role. Jika belum aktif, Discord akan menolak koneksi dengan error `PrivilegedIntentsRequired`.
+
+Untuk OAuth verify, buka Discord Developer Portal lalu tambahkan redirect URL:
+
+```text
+https://domain-railway-kamu.up.railway.app/verify/callback
+```
+
+URL itu harus sama dengan `DISCORD_OAUTH_REDIRECT_URI` di Railway.
 
 Untuk update slash command, set `DISCORD_SYNC_COMMANDS=true` sementara lalu deploy sekali. Setelah command muncul di server, kembalikan ke `false` agar Railway restart tidak kena rate limit Discord `429`.
 
@@ -114,10 +128,11 @@ Copy output `export_telegram_session.py` ke variable Railway `TELEGRAM_SESSION_S
 
 Alur member baru:
 
-1. Baca rules server.
-2. Konfirmasi sudah membaca rules.
-3. Verify member.
-4. Bot otomatis memberi role member.
+1. Klik `Verify Member`.
+2. Authorize Vercettia melalui Discord OAuth.
+3. Rules tampil di halaman verifikasi.
+4. Setujui rules.
+5. Bot otomatis memberi role member.
 
 Setup:
 

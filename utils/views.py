@@ -167,15 +167,34 @@ async def _grant_member_role(interaction: discord.Interaction) -> tuple[bool, st
     return True, f"Verifikasi berhasil. Role {role.mention} sudah ditambahkan."
 
 
-async def _send_rules_step(interaction: discord.Interaction) -> None:
+async def _send_oauth_step(interaction: discord.Interaction) -> None:
     if interaction.guild is None:
         await interaction.response.send_message("Verify hanya bisa digunakan di server.", ephemeral=True)
         return
 
-    settings = getattr(interaction.client, "settings", {})
-    rules_reference, rules_url = _rules_channel_reference(interaction.guild, settings)
+    if isinstance(interaction.user, discord.Member):
+        settings = getattr(interaction.client, "settings", {})
+        role_id = int(settings.get("member_role_id", 0))
+        role = interaction.guild.get_role(role_id) if role_id else None
+        if role and role in interaction.user.roles:
+            await interaction.response.send_message(
+                f"Akun kamu sudah terverifikasi dengan role {role.mention}.",
+                ephemeral=True,
+            )
+            return
+
+    verification = getattr(interaction.client, "oauth_verification", None)
+    if verification is None or not getattr(verification, "is_ready", False):
+        await interaction.response.send_message(
+            "OAuth verify belum dikonfigurasi. Isi DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, "
+            "dan DISCORD_OAUTH_REDIRECT_URI di Railway.",
+            ephemeral=True,
+        )
+        return
+
+    auth_url = verification.create_authorize_url(interaction.user.id, interaction.guild.id)
     await interaction.response.send_message(
-        view=RulesReadView(interaction.user.id, rules_reference, rules_url),
+        view=OAuthAuthorizeView(auth_url),
         ephemeral=True,
     )
 
@@ -191,35 +210,35 @@ class VerifyPanelView(discord.ui.LayoutView):
         container.add_item(discord.ui.Separator())
         container.add_item(
             discord.ui.TextDisplay(
-                "Sebelum mendapatkan role member, baca rules server terlebih dahulu. "
-                "Setelah itu lanjutkan verifikasi untuk membuka akses server."
+                "Klik verify untuk authorize akun Discord kamu. Setelah authorize, rules akan tampil "
+                "di halaman verifikasi dan role member diberikan otomatis setelah rules disetujui."
             )
         )
         container.add_item(discord.ui.Separator())
         container.add_item(
             discord.ui.TextDisplay(
                 "**Alur Join:**\n"
-                "- Baca rules server\n"
-                "- Konfirmasi sudah membaca rules\n"
-                "- Verify member\n"
-                "- Role member otomatis diberikan"
+                "- Klik Verify Member\n"
+                "- Authorize Vercettia melalui Discord\n"
+                "- Rules tampil di halaman verifikasi\n"
+                "- Setujui rules dan role member otomatis aktif"
             )
         )
         self.add_item(container)
 
         button = discord.ui.Button(
-            label="Baca Rules",
+            label="Verify Member",
             style=discord.ButtonStyle.primary,
             custom_id="vercettia_read_rules",
         )
-        button.callback = self.read_rules
+        button.callback = self.start_verify
 
         actions = discord.ui.Container()
         actions.add_item(discord.ui.ActionRow(button))
         self.add_item(actions)
 
-    async def read_rules(self, interaction: discord.Interaction) -> None:
-        await _send_rules_step(interaction)
+    async def start_verify(self, interaction: discord.Interaction) -> None:
+        await _send_oauth_step(interaction)
 
 
 class LegacyVerifyMemberView(discord.ui.View):
@@ -232,7 +251,38 @@ class LegacyVerifyMemberView(discord.ui.View):
         custom_id="vercettia_verify_member",
     )
     async def legacy_verify(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:
-        await _send_rules_step(interaction)
+        await _send_oauth_step(interaction)
+
+
+class OAuthAuthorizeView(discord.ui.LayoutView):
+    def __init__(self, auth_url: str) -> None:
+        super().__init__(timeout=300)
+        self.auth_url = auth_url
+        self.render()
+
+    def render(self) -> None:
+        container = discord.ui.Container(accent_color=0x8B5CF6)
+        container.add_item(discord.ui.TextDisplay("**Authorize Vercettia**"))
+        container.add_item(discord.ui.Separator())
+        container.add_item(
+            discord.ui.TextDisplay(
+                "Buka authorization Discord di bawah. Setelah auth berhasil, rules akan muncul "
+                "di browser dan role member akan diberikan otomatis setelah rules disetujui."
+            )
+        )
+        self.add_item(container)
+
+        actions = discord.ui.Container()
+        actions.add_item(
+            discord.ui.ActionRow(
+                discord.ui.Button(
+                    label="Authorize Discord",
+                    style=discord.ButtonStyle.link,
+                    url=self.auth_url,
+                )
+            )
+        )
+        self.add_item(actions)
 
 
 class RulesReadView(discord.ui.LayoutView):

@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from database.database import Database
 from utils.logger import setup_logging
+from utils.oauth import OAuthVerificationServer
 from utils.pakasir import PakasirGateway
 from utils.views import LegacyVerifyMemberView, TicketPanelView, VerifyPanelView
 
@@ -41,6 +42,7 @@ class VercettiaBot(commands.Bot):
         self.configs: dict[str, Any] = {}
         database_path = Path(os.getenv("DATABASE_PATH", str(BASE_DIR / "database" / "database.db")))
         self.db = Database(database_path)
+        self.oauth_verification = OAuthVerificationServer(self)
         self._fulfillment_running = False
 
     async def setup_hook(self) -> None:
@@ -55,6 +57,7 @@ class VercettiaBot(commands.Bot):
         self.add_view(TicketPanelView())
         self.add_view(VerifyPanelView())
         self.add_view(LegacyVerifyMemberView())
+        await self.oauth_verification.start()
 
         self.fulfillment_worker.change_interval(
             seconds=int(self.delivery_config.get("poll_interval_seconds", 45))
@@ -68,6 +71,7 @@ class VercettiaBot(commands.Bot):
 
     async def close(self) -> None:
         self.fulfillment_worker.cancel()
+        await self.oauth_verification.stop()
         await self.db.close()
         await super().close()
 
