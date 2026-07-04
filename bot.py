@@ -34,8 +34,8 @@ class VercettiaBot(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.guilds = True
-        intents.members = True
-        intents.voice_states = True
+        intents.members = self._env_bool("DISCORD_MEMBERS_INTENT", True)
+        intents.voice_states = self._env_bool("DISCORD_VOICE_STATES_INTENT", True)
         super().__init__(command_prefix=commands.when_mentioned, intents=intents)
         self.base_dir = BASE_DIR
         self.configs: dict[str, Any] = {}
@@ -270,7 +270,13 @@ async def main() -> None:
         raise RuntimeError("Set DISCORD_TOKEN di file .env terlebih dahulu.")
 
     async with VercettiaBot() as bot:
-        await bot.start(token)
+        try:
+            await bot.start(token)
+        except discord.PrivilegedIntentsRequired as exc:
+            raise RuntimeError(
+                "Aktifkan Server Members Intent di Discord Developer Portal untuk bot ini, "
+                "atau set DISCORD_MEMBERS_INTENT=false jika fitur welcome/leave/verify role ingin dimatikan sementara."
+            ) from exc
 
 
 if __name__ == "__main__":

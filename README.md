@@ -44,6 +44,8 @@ Project siap berjalan sebagai Railway worker service.
 DISCORD_TOKEN=token_bot_discord
 GUILD_ID=id_server_discord
 DATABASE_PATH=/data/database.db
+DISCORD_MEMBERS_INTENT=true
+DISCORD_VOICE_STATES_INTENT=true
 
 PAKASIR_ENABLED=true
 PAKASIR_PROJECT_SLUG=slug_project_pakasir
@@ -64,6 +66,12 @@ Railway akan menjalankan:
 ```bash
 python bot.py
 ```
+
+Di Discord Developer Portal, buka aplikasi bot lalu aktifkan:
+
+- Server Members Intent
+
+Intent ini wajib untuk welcome/leave dan verify role. Jika belum aktif, Discord akan menolak koneksi dengan error `PrivilegedIntentsRequired`.
 
 Untuk mendapatkan `TELEGRAM_SESSION_STRING`, login Telegram lokal dulu lalu export:
 
