@@ -15,7 +15,6 @@ from utils.translate import TranslatableView
 
 
 QRIS_KEYS = {
-    "payment_number",
     "qris",
     "qr",
     "qr_string",
@@ -52,6 +51,31 @@ def _find_nested_value(data: Any, keys: set[str]) -> Any | None:
             found = _find_nested_value(item, keys)
             if found not in (None, ""):
                 return found
+    return None
+
+
+def _find_payment_value(data: Any, key: str) -> Any | None:
+    if not isinstance(data, dict):
+        return None
+
+    payment = data.get("payment")
+    if isinstance(payment, dict):
+        value = payment.get(key)
+        if value not in (None, ""):
+            return value
+
+    return _find_nested_value(data, {key})
+
+
+def _extract_qris_text(data: Any) -> str | None:
+    payment_number = _find_payment_value(data, "payment_number")
+    if payment_number not in (None, ""):
+        return str(payment_number)
+
+    qris_value = _find_nested_value(data, QRIS_KEYS)
+    if qris_value not in (None, ""):
+        return str(qris_value)
+
     return None
 
 
@@ -175,13 +199,20 @@ class BuyModal(discord.ui.Modal):
         if gateway.is_ready_for_checkout:
             try:
                 payment_url = gateway.build_payment_url(order["invoice"], total)
-                if gateway.is_ready_for_status_check and gateway.default_method == "qris":
+                if (
+                    gateway.direct_qris_enabled
+                    and gateway.is_ready_for_status_check
+                    and gateway.default_method == "qris"
+                ):
                     try:
                         payment_data = await gateway.create_transaction(order["invoice"], total, method="qris")
-                        qris_value = _find_nested_value(payment_data, QRIS_KEYS)
-                        total_value = _find_nested_value(payment_data, TOTAL_KEYS)
-                        expired_value = _find_nested_value(payment_data, EXPIRED_KEYS)
-                        qris_text = str(qris_value) if qris_value else None
+                        qris_text = _extract_qris_text(payment_data)
+                        total_value = _find_payment_value(payment_data, "total_payment")
+                        if total_value in (None, ""):
+                            total_value = _find_nested_value(payment_data, TOTAL_KEYS)
+                        expired_value = _find_payment_value(payment_data, "expired_at")
+                        if expired_value in (None, ""):
+                            expired_value = _find_nested_value(payment_data, EXPIRED_KEYS)
                         pakasir_total = _as_int(total_value)
                         pakasir_expired = str(expired_value) if expired_value else None
                     except Exception:
@@ -233,7 +264,7 @@ class BuyModal(discord.ui.Modal):
         mention = staff_mention(guild, settings)
         qris_files: list[discord.File] = []
         if qris_text:
-            qris_files.append(make_qris_file(qris_text, order["invoice"]))
+            qris_files.append(make_qris_file(qris_text, order["invoice"], pakasir_total or total))
         qris_filename = qris_files[0].filename if qris_files else None
         checkout_view = CheckoutView(
             order["invoice"],
