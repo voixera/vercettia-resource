@@ -240,13 +240,11 @@ class BuyModal(discord.ui.Modal):
 
         payment_items: list[tuple[str, Any]]
         if payment_url:
-            payment_items = [("Method", "Pakasir QRIS")]
+            payment_items = [("Method", "QRIS")]
             if pakasir_total:
                 payment_items.append(("Total Bayar", money(int(pakasir_total), settings)))
             if pakasir_expired:
                 payment_items.append(("Expired", compact_datetime(str(pakasir_expired))))
-            payment_items.append(("QRIS", "Terlampir di invoice" if qris_text else "Belum tersedia otomatis"))
-            payment_items.append(("Delivery", "Manual oleh admin di ticket"))
         else:
             payment_items = [("Status", "Hubungi staff untuk instruksi pembayaran")]
         content_builder = lambda language: invoice_message(settings, order, self.product, payment_items, language)
