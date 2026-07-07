@@ -21,7 +21,7 @@
   "order_log_channel_id": 0,
   "product_auto_refresh": {
     "enabled": true,
-    "interval_seconds": 60
+    "interval_seconds": 300
   },
   "verification_rules": [
     "Hormati seluruh member dan staff. Toxic, harassment, diskriminasi, dan provokasi tidak ditoleransi.",

@@ -137,6 +137,7 @@ class Admin(commands.Cog):
             self.bot,
             add_new_products=True,
             save=not dry_run,
+            force=True,
         )
         if result.error:
             await interaction.followup.send(result.error, ephemeral=True)

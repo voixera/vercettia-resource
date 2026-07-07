@@ -19,7 +19,7 @@ class Store(commands.Cog):
         self.bot = bot
         self.active_catalog_messages: set[tuple[int, int]] = set()
         self._last_products_snapshot = self._products_snapshot()
-        self._refresh_interval_seconds = 60
+        self._refresh_interval_seconds = 300
         self.product_refresh_worker.start()
 
     def cog_unload(self) -> None:
@@ -107,15 +107,15 @@ class Store(commands.Cog):
         self._last_products_snapshot = self._products_snapshot()
         await self._edit_active_catalog_messages()
 
-    @tasks.loop(seconds=60)
+    @tasks.loop(seconds=300)
     async def product_refresh_worker(self) -> None:
         settings = getattr(self.bot, "settings", {})
         refresh_config = settings.get("product_auto_refresh", {})
         if isinstance(refresh_config, dict) and not refresh_config.get("enabled", True):
             return
 
-        interval = int(refresh_config.get("interval_seconds", 60)) if isinstance(refresh_config, dict) else 60
-        interval = max(30, interval)
+        interval = int(refresh_config.get("interval_seconds", 300)) if isinstance(refresh_config, dict) else 300
+        interval = max(300, interval)
         if self._refresh_interval_seconds != interval:
             self._refresh_interval_seconds = interval
             self.product_refresh_worker.change_interval(seconds=interval)

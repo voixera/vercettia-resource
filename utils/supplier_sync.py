@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from dataclasses import dataclass, field
 
 from discord.ext import commands
@@ -21,13 +22,41 @@ async def refresh_supplier_products(
     *,
     add_new_products: bool = True,
     save: bool = True,
+    force: bool = False,
+    min_interval_seconds: int | None = None,
 ) -> SupplierSyncResult:
     lock = getattr(bot, "_supplier_sync_lock", None)
     if lock is None:
         lock = asyncio.Lock()
         setattr(bot, "_supplier_sync_lock", lock)
 
+    if min_interval_seconds is None:
+        settings = getattr(bot, "settings", {})
+        refresh_config = settings.get("product_auto_refresh", {})
+        min_interval_seconds = int(refresh_config.get("interval_seconds", 300)) if isinstance(refresh_config, dict) else 300
+    min_interval_seconds = max(60, int(min_interval_seconds))
+
+    now = time.monotonic()
+    last_refresh = float(getattr(bot, "_supplier_last_refresh_at", 0.0))
+    if not force and last_refresh and (now - last_refresh) < min_interval_seconds:
+        result = SupplierSyncResult()
+        result.skipped.append("recent")
+        return result
+
+    if not force and lock.locked():
+        result = SupplierSyncResult()
+        result.skipped.append("running")
+        return result
+
     async with lock:
+        now = time.monotonic()
+        last_refresh = float(getattr(bot, "_supplier_last_refresh_at", 0.0))
+        if not force and last_refresh and (now - last_refresh) < min_interval_seconds:
+            result = SupplierSyncResult()
+            result.skipped.append("recent")
+            return result
+
+        setattr(bot, "_supplier_last_refresh_at", now)
         return await _refresh_supplier_products(bot, add_new_products=add_new_products, save=save)
 
 

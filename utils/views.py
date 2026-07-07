@@ -33,7 +33,7 @@ async def _refresh_supplier_from_interaction(interaction: discord.Interaction) -
         "products": getattr(bot, "products_config", {}).get("products", []),
     }
     before_snapshot = repr(before)
-    result = await refresh_supplier_products(bot, add_new_products=True, save=True)
+    result = await refresh_supplier_products(bot, add_new_products=True, save=True, force=True)
     if result.error:
         return False, f"Refresh stok gagal: {result.error}"
 
